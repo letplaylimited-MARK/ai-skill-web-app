@@ -37,6 +37,14 @@ export async function DELETE(
     await prisma.execution.delete({ where: { id } });
     return NextResponse.json({ success: true });
   } catch (err) {
+    // Prisma P2025: 记录不存在 → 返回 404 而非 500
+    if (
+      err instanceof Error &&
+      (err.message.includes('Record to delete does not exist') ||
+        (err as { code?: string }).code === 'P2025')
+    ) {
+      return NextResponse.json({ error: 'Execution not found' }, { status: 404 });
+    }
     console.error('[DELETE /api/execution/[id]]', err);
     return NextResponse.json({ error: '删除失败' }, { status: 500 });
   }

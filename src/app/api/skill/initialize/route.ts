@@ -13,6 +13,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: '请输入需求描述' }, { status: 400 });
     }
 
+    // 输入长度校验（防止超大请求导致 LLM 超时或 500）
+    if (user_input.trim().length > 5000) {
+      return NextResponse.json(
+        { error: '输入内容不能超过 5000 字符，当前: ' + user_input.trim().length },
+        { status: 400 }
+      );
+    }
+
     // 解析 API Key
     const apiKey = resolveApiKey(api_provider, api_key_override);
 
