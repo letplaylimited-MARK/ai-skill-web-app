@@ -273,12 +273,60 @@ skill-00-navigator
 
 ---
 
-## 当前项目状态（交接时）
+## 当前项目状态（v1.1.0，P0 安全加固后）
 
 - **已完成**：所有核心功能均已实现并通过全链路回归测试（17/17 用例通过）
-- **线上测试**：在无真实 API Key 的环境下完成模拟验证
+- **安全状态**：P0 生产安全加固完成（综合评分 8.5/10，OWASP 10/10 覆盖）
+- **安全模块**：`src/lib/rate-limit.ts`（速率限制）+ `src/lib/validate.ts`（输入校验）已集成到所有 5 个 API 端点
+- **新增文档**：`DEV_LESSONS.md`（完整开发经验记录，包含 8 条踩坑 + 7 个可复用模式）
 - **待验证**：使用真实 `ANTHROPIC_API_KEY` 或 `OPENAI_API_KEY` 进行端到端 AI 调用测试
-- **参考文档**：见项目根目录的 `CONTEXT.md`（架构决策）和 `ROADMAP.md`（迭代方向）
+- **参考文档**：`CONTEXT.md`（架构决策 + 演进历史）、`ROADMAP.md`（迭代方向）、`DEV_LESSONS.md`（经验记录）
+
+---
+
+## 新增 API 端点的安全三件套（必须遵循）
+
+**每个新 API 路由必须在函数顶部加入以下标准安全头部**：
+
+```typescript
+import { rateLimit, getClientIp } from '@/lib/rate-limit';
+import { sanitizeString, sanitizeForLog } from '@/lib/validate';
+
+export async function POST(req: NextRequest) {
+  // 1. 速率限制（根据端点重要性调整 max 值）
+  const clientIp = getClientIp(req);
+  const rl = rateLimit(clientIp, { max: 30, windowMs: 60_000, prefix: 'your-api-name' });
+  if (!rl.success) {
+    return NextResponse.json(
+      { error: '请求过于频繁，请稍后再试' },
+      { status: 429, headers: { 'Retry-After': String(Math.ceil((rl.resetAt - Date.now()) / 1000)) } }
+    );
+  }
+
+  try {
+    // 2. 输入校验与净化
+    const rawInput = body.user_input;
+    const cleanInput = sanitizeString(rawInput, 2000);
+    if (!cleanInput) return NextResponse.json({ error: '输入不合法' }, { status: 400 });
+
+    // ... 业务逻辑 ...
+
+  } catch (err) {
+    // 3. 日志防注入
+    console.error('[/api/your-route]', sanitizeForLog(err instanceof Error ? err.message : String(err)));
+    return NextResponse.json({ error: '服务器内部错误' }, { status: 500 });
+  }
+}
+```
+
+**各端点速率限制参考值**：
+
+| 端点类型 | 推荐 max/min | 说明 |
+|---------|-------------|------|
+| AI 执行（高成本） | 15–30 | initialize: 15, execute: 30 |
+| AI 审议（高成本） | 20 | council/run |
+| 数据写入 | 10 | POST /projects |
+| 数据读取 | 60 | GET /projects |
 
 ---
 
@@ -292,3 +340,7 @@ skill-00-navigator
 | `result` 页面白屏 | 用 `.json()` 读取了 markdown 响应 | `?format=json` 用 `.json()`，`?format=markdown` 用 `.text()` |
 | 自动执行死锁 | `useState` 执行锁被旧闭包捕获 | 改用 `useRef(false)` |
 | `params is not a function` | Next.js 16 params 是 Promise | Server 端用 `await params`，Client 端用 `use(params)` |
+| API 请求返回 429 | 速率限制触发 | 正常保护行为；检查 `Retry-After` 响应头 |
+| API 返回 400 "UUID v4" | execution_id 格式不合法 | 传入标准 UUID v4 格式（含连字符的 8-4-4-4-12） |
+
+> **更多踩坑详情**：查阅 `DEV_LESSONS.md` — 包含 8 条完整踩坑记录（现象/根因/解法/预防原则）和 7 个可复用代码模式。
