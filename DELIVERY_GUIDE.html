@@ -1,0 +1,1996 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Skill 编排系统 v1.0.0 — 交付报告</title>
+<style>
+:root {
+  --bg: #0a0a0f;
+  --card: #12121a;
+  --card2: #1a1a26;
+  --border: #2a2a3e;
+  --indigo: #6366f1;
+  --cyan: #06b6d4;
+  --green: #10b981;
+  --amber: #f59e0b;
+  --rose: #f43f5e;
+  --text: #e2e8f0;
+  --muted: #94a3b8;
+  --nav-w: 240px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; line-height:1.6; }
+
+/* NAV */
+#sidebar {
+  position: fixed; top:0; left:0; width:var(--nav-w); height:100vh;
+  background: var(--card); border-right: 1px solid var(--border);
+  overflow-y: auto; z-index: 100; transition: transform .3s;
+}
+#sidebar .logo {
+  padding: 20px 16px 12px;
+  border-bottom: 1px solid var(--border);
+}
+#sidebar .logo h2 { font-size:13px; color: var(--indigo); font-weight:700; letter-spacing:.05em; }
+#sidebar .logo p { font-size:11px; color: var(--muted); margin-top:2px; }
+#sidebar nav { padding: 8px 0; }
+#sidebar nav a {
+  display:flex; align-items:center; gap:8px;
+  padding: 7px 16px; font-size:12px; color: var(--muted);
+  text-decoration: none; transition: all .2s; border-left: 3px solid transparent;
+}
+#sidebar nav a:hover { color: var(--text); background: var(--card2); }
+#sidebar nav a.active { color: var(--indigo); border-left-color: var(--indigo); background: rgba(99,102,241,.08); }
+#sidebar nav a .num { font-size:10px; opacity:.6; min-width:20px; }
+
+/* MAIN */
+#main { margin-left: var(--nav-w); padding: 32px 40px; max-width: 1100px; }
+
+/* SECTIONS */
+.section { margin-bottom: 64px; scroll-margin-top: 24px; }
+.section-header { margin-bottom: 28px; }
+.section-badge {
+  display: inline-flex; align-items:center; gap:6px;
+  background: rgba(99,102,241,.15); border: 1px solid rgba(99,102,241,.3);
+  color: var(--indigo); padding: 3px 10px; border-radius: 20px;
+  font-size:11px; font-weight:700; letter-spacing:.08em; margin-bottom:10px;
+}
+.section-title { font-size:28px; font-weight:800; color:#fff; margin-bottom:8px; }
+.section-desc { color: var(--muted); font-size:15px; max-width:680px; }
+
+/* CARDS */
+.card { background: var(--card); border: 1px solid var(--border); border-radius:12px; padding:20px; }
+.card2 { background: var(--card2); border: 1px solid var(--border); border-radius:10px; padding:16px; }
+.grid2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+.grid3 { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+.grid4 { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; }
+
+/* CODE */
+pre, code {
+  font-family: 'JetBrains Mono','Fira Code',Consolas,monospace;
+  font-size:13px;
+}
+pre {
+  background: #0d1117; border: 1px solid var(--border); border-radius:8px;
+  padding:16px; overflow-x:auto; margin:12px 0; line-height:1.5;
+}
+pre .kw { color:#ff7b72; }
+pre .str { color:#a5d6ff; }
+pre .cmt { color:#8b949e; font-style:italic; }
+pre .fn { color:#d2a8ff; }
+pre .var { color:#79c0ff; }
+code { background: rgba(99,102,241,.12); color: var(--indigo); padding:2px 6px; border-radius:4px; }
+
+/* TAGS */
+.tag {
+  display:inline-block; padding:2px 8px; border-radius:20px; font-size:11px; font-weight:600;
+}
+.tag-indigo { background:rgba(99,102,241,.15); color:var(--indigo); border:1px solid rgba(99,102,241,.3); }
+.tag-cyan { background:rgba(6,182,212,.15); color:var(--cyan); border:1px solid rgba(6,182,212,.3); }
+.tag-green { background:rgba(16,185,129,.15); color:var(--green); border:1px solid rgba(16,185,129,.3); }
+.tag-amber { background:rgba(245,158,11,.15); color:var(--amber); border:1px solid rgba(245,158,11,.3); }
+.tag-rose { background:rgba(244,63,94,.15); color:var(--rose); border:1px solid rgba(244,63,94,.3); }
+
+/* TABS */
+.tabs { display:flex; gap:4px; margin-bottom:16px; border-bottom:1px solid var(--border); padding-bottom:0; }
+.tab-btn {
+  padding: 8px 16px; border:none; background:none; color:var(--muted);
+  font-size:13px; cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-1px;
+  transition: all .2s;
+}
+.tab-btn.active { color:var(--indigo); border-bottom-color:var(--indigo); }
+.tab-content { display:none; }
+.tab-content.active { display:block; }
+
+/* TABLE */
+table { width:100%; border-collapse:collapse; font-size:13px; }
+th { background:var(--card2); color:var(--muted); padding:10px 14px; text-align:left; font-weight:600; font-size:12px; }
+td { padding:10px 14px; border-bottom:1px solid var(--border); }
+tr:last-child td { border-bottom:none; }
+tr:hover td { background:rgba(255,255,255,.02); }
+
+/* STEPS */
+.step { display:flex; gap:16px; margin-bottom:20px; }
+.step-num {
+  width:32px; height:32px; min-width:32px;
+  background:var(--indigo); border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:13px; font-weight:700; color:#fff;
+}
+.step-body h4 { font-size:14px; font-weight:700; color:#fff; margin-bottom:4px; }
+.step-body p { font-size:13px; color:var(--muted); }
+
+/* PYRAMID */
+.pyramid { display:flex; flex-direction:column; align-items:center; gap:4px; padding:20px; }
+.py-tier {
+  display:flex; align-items:center; justify-content:center;
+  border-radius:6px; font-size:13px; font-weight:600; color:#fff;
+  transition: opacity .2s;
+}
+
+/* SKILL CARD */
+.skill-card { position:relative; overflow:hidden; }
+.skill-card::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:3px;
+}
+.skill-s00::before { background:var(--indigo); }
+.skill-s01::before { background:var(--cyan); }
+.skill-s02::before { background:var(--green); }
+.skill-s03::before { background:var(--amber); }
+.skill-s04::before { background:var(--rose); }
+.skill-s05::before { background:#a78bfa; }
+.skill-num { font-size:32px; font-weight:900; opacity:.1; position:absolute; top:10px; right:14px; }
+.skill-icon { font-size:28px; margin-bottom:8px; }
+.skill-title { font-size:16px; font-weight:700; color:#fff; margin-bottom:4px; }
+.skill-sub { font-size:12px; color:var(--muted); margin-bottom:12px; }
+.skill-io { background:var(--bg); border-radius:6px; padding:10px; margin-top:10px; font-size:12px; }
+.skill-io strong { color:var(--muted); display:block; font-size:10px; letter-spacing:.08em; margin-bottom:4px; }
+
+/* SEARCH OVERLAY */
+#search-overlay {
+  display:none; position:fixed; inset:0; background:rgba(0,0,0,.7);
+  z-index:1000; align-items:flex-start; justify-content:center; padding-top:15vh;
+}
+#search-overlay.open { display:flex; }
+#search-box {
+  background:var(--card); border:1px solid var(--border); border-radius:12px;
+  width:600px; max-width:90vw; overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,.5);
+}
+#search-input {
+  width:100%; padding:16px 20px; background:none; border:none; outline:none;
+  color:var(--text); font-size:16px; border-bottom:1px solid var(--border);
+}
+#search-input::placeholder { color:var(--muted); }
+#search-results { max-height:400px; overflow-y:auto; }
+.search-item {
+  padding:12px 20px; cursor:pointer; border-bottom:1px solid rgba(255,255,255,.05);
+  transition: background .15s;
+}
+.search-item:hover, .search-item.focused { background:var(--card2); }
+.search-item .s-section { font-size:10px; color:var(--indigo); font-weight:700; margin-bottom:3px; }
+.search-item .s-title { font-size:14px; color:var(--text); }
+.search-item .s-snippet { font-size:12px; color:var(--muted); margin-top:3px; }
+.search-item mark { background:rgba(99,102,241,.3); color:var(--indigo); border-radius:2px; }
+
+/* HAMBURGER */
+#hamburger { display:none; position:fixed; top:16px; left:16px; z-index:200;
+  background:var(--card); border:1px solid var(--border); border-radius:8px;
+  padding:8px; cursor:pointer; }
+#hamburger span { display:block; width:18px; height:2px; background:var(--text); margin:3px 0; }
+
+/* MODE CARDS */
+.mode-card { border-radius:10px; padding:14px 16px; border:1px solid var(--border); }
+
+/* HIGHLIGHT */
+.highlight { background:rgba(99,102,241,.12); border-left:3px solid var(--indigo); padding:12px 16px; border-radius:0 8px 8px 0; margin:12px 0; }
+
+/* PROGRESS BAR */
+.progress-bar { background:var(--border); border-radius:4px; height:6px; overflow:hidden; margin-top:6px; }
+.progress-fill { height:100%; border-radius:4px; }
+
+/* TIMELINE */
+.timeline { border-left:2px solid var(--border); padding-left:20px; margin-left:10px; }
+.timeline-item { margin-bottom:24px; position:relative; }
+.timeline-item::before {
+  content:''; position:absolute; left:-26px; top:4px;
+  width:10px; height:10px; border-radius:50%; border:2px solid var(--indigo);
+  background:var(--bg);
+}
+.timeline-item.active::before { background:var(--indigo); }
+
+/* SEARCH SHORTCUT */
+.search-shortcut {
+  position:fixed; bottom:24px; right:24px; z-index:50;
+  background:var(--card); border:1px solid var(--border); border-radius:20px;
+  padding:8px 14px; cursor:pointer; font-size:12px; color:var(--muted);
+  display:flex; align-items:center; gap:6px; transition: all .2s;
+}
+.search-shortcut:hover { border-color:var(--indigo); color:var(--indigo); }
+.search-shortcut kbd {
+  background:var(--card2); border:1px solid var(--border); border-radius:4px;
+  padding:2px 6px; font-size:11px;
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+  #sidebar { transform: translateX(-100%); }
+  #sidebar.open { transform: translateX(0); }
+  #main { margin-left:0; padding:20px 16px; }
+  #hamburger { display:block; }
+  .grid2,.grid3,.grid4 { grid-template-columns:1fr; }
+  .section-title { font-size:22px; }
+}
+</style>
+</head>
+<body>
+
+<!-- Hamburger -->
+<div id="hamburger" onclick="toggleSidebar()">
+  <span></span><span></span><span></span>
+</div>
+
+<!-- Search shortcut -->
+<div class="search-shortcut" onclick="openSearch()">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+  搜索内容
+  <kbd>Ctrl+K</kbd>
+</div>
+
+<!-- Search overlay -->
+<div id="search-overlay" onclick="handleOverlayClick(event)">
+  <div id="search-box">
+    <input id="search-input" placeholder="搜索章节内容..." oninput="doSearch(this.value)" onkeydown="searchKeydown(event)">
+    <div id="search-results"></div>
+  </div>
+</div>
+
+<!-- Sidebar -->
+<div id="sidebar">
+  <div class="logo">
+    <h2>AI SKILL 编排系统</h2>
+    <p>v1.0.0 交付报告</p>
+  </div>
+  <nav id="toc">
+    <a href="#s01" class="nav-link"><span class="num">01</span>价值体系</a>
+    <a href="#s02" class="nav-link"><span class="num">02</span>核心文件</a>
+    <a href="#s03" class="nav-link"><span class="num">03</span>搜索功能</a>
+    <a href="#s04" class="nav-link"><span class="num">04</span>使用场景</a>
+    <a href="#s05" class="nav-link"><span class="num">05</span>如何安装</a>
+    <a href="#s06" class="nav-link"><span class="num">06</span>如何部署</a>
+    <a href="#s07" class="nav-link"><span class="num">07</span>技能介绍</a>
+    <a href="#s08" class="nav-link"><span class="num">08</span>对应人群</a>
+    <a href="#s09" class="nav-link"><span class="num">09</span>引导流程</a>
+    <a href="#s10" class="nav-link"><span class="num">10</span>模拟案例</a>
+    <a href="#s11" class="nav-link"><span class="num">11</span>使用指南</a>
+    <a href="#s12" class="nav-link"><span class="num">12</span>使用技巧</a>
+    <a href="#s13" class="nav-link"><span class="num">13</span>输出结果</a>
+    <a href="#s14" class="nav-link"><span class="num">14</span>准备工作</a>
+    <a href="#s15" class="nav-link"><span class="num">15</span>学习指令</a>
+  </nav>
+</div>
+
+<!-- Main Content -->
+<div id="main">
+
+<!-- ===== SECTION 01: 价值体系 ===== -->
+<section class="section" id="s01">
+  <div class="section-header">
+    <div class="section-badge">01 &nbsp;·&nbsp; VALUE SYSTEM</div>
+    <h2 class="section-title">价值体系</h2>
+    <p class="section-desc">AI Skill 编排系统通过结构化的六层Skill流水线，将混沌的AI工作流转变为可重复、可审计、可迭代的工程化流程。</p>
+  </div>
+
+  <!-- 价值金字塔 -->
+  <div class="card" style="margin-bottom:20px;">
+    <h3 style="font-size:15px;color:#fff;margin-bottom:16px;">价值金字塔</h3>
+    <div class="pyramid">
+      <div class="py-tier" style="width:180px;height:48px;background:linear-gradient(135deg,#6366f1,#8b5cf6);">🎯 战略层：决策加速</div>
+      <div class="py-tier" style="width:280px;height:48px;background:linear-gradient(135deg,#06b6d4,#0891b2);">⚙️ 执行层：流程自动化</div>
+      <div class="py-tier" style="width:380px;height:48px;background:linear-gradient(135deg,#10b981,#059669);">🔧 工具层：六层Skill编排</div>
+      <div class="py-tier" style="width:480px;height:48px;background:linear-gradient(135deg,#1a1a26,#2a2a3e);border:1px solid #2a2a3e;">📦 基础层：Next.js + Prisma + PostgreSQL</div>
+    </div>
+  </div>
+
+  <!-- 三层价值主张 -->
+  <div class="grid3" style="margin-bottom:20px;">
+    <div class="card" style="border-top:3px solid var(--indigo);">
+      <div style="font-size:24px;margin-bottom:8px;">🚀</div>
+      <h4 style="color:#fff;margin-bottom:6px;">效率提升 10x</h4>
+      <p style="font-size:13px;color:var(--muted);">将原本需要数小时手工整理的需求分析、技术选型、执行规划，压缩到分钟级完成。六层Skill协同消除重复劳动。</p>
+    </div>
+    <div class="card" style="border-top:3px solid var(--cyan);">
+      <div style="font-size:24px;margin-bottom:8px;">🎓</div>
+      <h4 style="color:#fff;margin-bottom:6px;">知识沉淀</h4>
+      <p style="font-size:13px;color:var(--muted);">每次执行结果自动保存为结构化JSON和Markdown，形成可检索的组织知识库。历史执行记录支持对比和复用。</p>
+    </div>
+    <div class="card" style="border-top:3px solid var(--green);">
+      <div style="font-size:24px;margin-bottom:8px;">🔄</div>
+      <h4 style="color:#fff;margin-bottom:6px;">持续迭代</h4>
+      <p style="font-size:13px;color:var(--muted);">五种执行模式适配不同场景。模式E深度精炼支持多轮迭代，每次基于上次输出持续优化，逼近最优解。</p>
+    </div>
+  </div>
+
+  <!-- 对比表 -->
+  <div class="card">
+    <h3 style="font-size:15px;color:#fff;margin-bottom:16px;">与传统方式对比</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>维度</th>
+          <th>传统手工方式</th>
+          <th style="color:var(--indigo);">AI Skill 编排系统</th>
+          <th>提升</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>需求分析</td>
+          <td style="color:var(--muted);">2-4小时人工梳理</td>
+          <td style="color:var(--green);">S00路由+S01优化，3-5分钟</td>
+          <td><span class="tag tag-green">40x</span></td>
+        </tr>
+        <tr>
+          <td>技术选型</td>
+          <td style="color:var(--muted);">1-3天调研、评分</td>
+          <td style="color:var(--green);">S03七维矩阵，10分钟</td>
+          <td><span class="tag tag-green">100x</span></td>
+        </tr>
+        <tr>
+          <td>SOP制作</td>
+          <td style="color:var(--muted);">需要专职PM，数天</td>
+          <td style="color:var(--green);">S02十阶段流程，15分钟</td>
+          <td><span class="tag tag-green">50x</span></td>
+        </tr>
+        <tr>
+          <td>执行规划</td>
+          <td style="color:var(--muted);">项目管理工具手动输入</td>
+          <td style="color:var(--green);">S04三层拆解，自动生成</td>
+          <td><span class="tag tag-green">20x</span></td>
+        </tr>
+        <tr>
+          <td>验收标准</td>
+          <td style="color:var(--muted);">主观判断，标准不统一</td>
+          <td style="color:var(--green);">S05五维量化评分，客观可复现</td>
+          <td><span class="tag tag-green">质变</span></td>
+        </tr>
+        <tr>
+          <td>知识留存</td>
+          <td style="color:var(--muted);">散落邮件/文档，难以检索</td>
+          <td style="color:var(--green);">结构化存储，全文可搜索</td>
+          <td><span class="tag tag-green">∞</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ===== SECTION 02: 核心文件 ===== -->
+<section class="section" id="s02">
+  <div class="section-header">
+    <div class="section-badge">02 &nbsp;·&nbsp; CORE FILES</div>
+    <h2 class="section-title">核心文件</h2>
+    <p class="section-desc">项目的核心文件结构，每个文件承担明确职责，共同构成可维护的代码组织体系。</p>
+  </div>
+  <div class="grid2" style="margin-bottom:20px;">
+    <div class="card">
+      <h3 style="font-size:14px;color:var(--muted);margin-bottom:12px;letter-spacing:.06em;">📁 根目录文件</h3>
+      <table>
+        <thead><tr><th>文件</th><th>职责</th></tr></thead>
+        <tbody>
+          <tr><td><code>AGENT.md</code></td><td style="color:var(--muted);">AI代理工作规范，定义Skill边界和交互协议</td></tr>
+          <tr><td><code>CONTEXT.md</code></td><td style="color:var(--muted);">项目上下文文档，架构决策和核心约定</td></tr>
+          <tr><td><code>ROADMAP.md</code></td><td style="color:var(--muted);">版本路线图，功能规划和里程碑</td></tr>
+          <tr><td><code>next.config.ts</code></td><td style="color:var(--muted);">Next.js 16配置，API路由和构建优化</td></tr>
+          <tr><td><code>prisma.config.ts</code></td><td style="color:var(--muted);">Prisma连接池和数据库适配器配置</td></tr>
+          <tr><td><code>pnpm-workspace.yaml</code></td><td style="color:var(--muted);">Monorepo工作区配置</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="card">
+      <h3 style="font-size:14px;color:var(--muted);margin-bottom:12px;letter-spacing:.06em;">📁 prisma/ 目录</h3>
+      <table>
+        <thead><tr><th>文件</th><th>职责</th></tr></thead>
+        <tbody>
+          <tr><td><code>schema.prisma</code></td><td style="color:var(--muted);">数据库Schema定义，Projects/Runs/Results模型</td></tr>
+          <tr><td><code>migrations/</code></td><td style="color:var(--muted);">数据库迁移历史，版本化DDL变更</td></tr>
+          <tr><td><code>seed.ts</code></td><td style="color:var(--muted);">初始数据种子，包含示例项目和运行记录</td></tr>
+        </tbody>
+      </table>
+      <h3 style="font-size:14px;color:var(--muted);margin:16px 0 12px;letter-spacing:.06em;">📁 src/app/ 路由</h3>
+      <table>
+        <thead><tr><th>路由</th><th>功能</th></tr></thead>
+        <tbody>
+          <tr><td><code>/</code></td><td style="color:var(--muted);">首页 — 项目列表和快速创建</td></tr>
+          <tr><td><code>/projects/[id]</code></td><td style="color:var(--muted);">项目详情 — 运行历史</td></tr>
+          <tr><td><code>/run/[id]</code></td><td style="color:var(--muted);">执行控制台 — 实时流式输出</td></tr>
+          <tr><td><code>/api/run</code></td><td style="color:var(--muted);">Skill执行API端点</td></tr>
+          <tr><td><code>/api/projects</code></td><td style="color:var(--muted);">项目CRUD API</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="card">
+    <h3 style="font-size:14px;color:#fff;margin-bottom:12px;">src/ 目录结构</h3>
+    <pre><span class="cmt"># AI Skill 编排系统 — 源码结构</span>
+src/
+├── app/                    <span class="cmt"># Next.js App Router</span>
+│   ├── layout.tsx          <span class="cmt"># 根布局，主题 + 导航</span>
+│   ├── page.tsx            <span class="cmt"># 首页</span>
+│   ├── projects/
+│   │   └── [id]/page.tsx   <span class="cmt"># 项目详情页</span>
+│   ├── run/
+│   │   └── [id]/page.tsx   <span class="cmt"># 执行控制台</span>
+│   └── api/
+│       ├── run/route.ts    <span class="cmt"># Skill执行 (SSE流式)</span>
+│       └── projects/       <span class="cmt"># 项目管理API</span>
+├── components/             <span class="cmt"># React组件</span>
+│   ├── SkillPipeline.tsx   <span class="cmt"># 六层流水线可视化</span>
+│   ├── RunConsole.tsx      <span class="cmt"># 实时执行控制台</span>
+│   ├── RoundTable.tsx      <span class="cmt"># 圆桌审议组件</span>
+│   └── ResultViewer.tsx    <span class="cmt"># 结果展示</span>
+├── lib/
+│   ├── skills/             <span class="cmt"># 六个Skill实现</span>
+│   │   ├── s00-router.ts
+│   │   ├── s01-prompt.ts
+│   │   ├── s02-sop.ts
+│   │   ├── s03-scout.ts
+│   │   ├── s04-planner.ts
+│   │   └── s05-validator.ts
+│   ├── ai.ts               <span class="cmt"># Anthropic/OpenAI客户端</span>
+│   └── db.ts               <span class="cmt"># Prisma客户端单例</span>
+└── types/                  <span class="cmt"># TypeScript类型定义</span>
+    └── index.ts</pre>
+  </div>
+</section>
+
+<!-- ===== SECTION 03: 搜索功能 ===== -->
+<section class="section" id="s03">
+  <div class="section-header">
+    <div class="section-badge">03 &nbsp;·&nbsp; SEARCH</div>
+    <h2 class="section-title">搜索功能</h2>
+    <p class="section-desc">内置全文搜索，按 <kbd style="background:var(--card2);border:1px solid var(--border);border-radius:4px;padding:2px 6px;font-size:12px;">Ctrl+K</kbd> 或点击右下角按钮打开搜索覆盖层。</p>
+  </div>
+  <div class="grid2" style="margin-bottom:20px;">
+    <div class="card">
+      <h4 style="color:#fff;margin-bottom:12px;">搜索功能特性</h4>
+      <ul style="list-style:none;display:flex;flex-direction:column;gap:8px;">
+        <li style="display:flex;gap:8px;"><span style="color:var(--green);">✓</span><span style="font-size:13px;">实时搜索，输入即显示结果</span></li>
+        <li style="display:flex;gap:8px;"><span style="color:var(--green);">✓</span><span style="font-size:13px;">关键词高亮显示匹配位置</span></li>
+        <li style="display:flex;gap:8px;"><span style="color:var(--green);">✓</span><span style="font-size:13px;">点击结果跳转对应章节</span></li>
+        <li style="display:flex;gap:8px;"><span style="color:var(--green);">✓</span><span style="font-size:13px;">上下方向键导航，Enter跳转</span></li>
+        <li style="display:flex;gap:8px;"><span style="color:var(--green);">✓</span><span style="font-size:13px;">ESC键关闭搜索覆盖层</span></li>
+        <li style="display:flex;gap:8px;"><span style="color:var(--green);">✓</span><span style="font-size:13px;">搜索范围覆盖全部15个章节</span></li>
+        <li style="display:flex;gap:8px;"><span style="color:var(--green);">✓</span><span style="font-size:13px;">移动端支持点击触发搜索</span></li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4 style="color:#fff;margin-bottom:12px;">快捷键速查</h4>
+      <table>
+        <tbody>
+          <tr><td><kbd style="background:var(--card2);border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-size:12px;">Ctrl + K</kbd></td><td style="color:var(--muted);">打开搜索覆盖层</td></tr>
+          <tr><td><kbd style="background:var(--card2);border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-size:12px;">ESC</kbd></td><td style="color:var(--muted);">关闭搜索覆盖层</td></tr>
+          <tr><td><kbd style="background:var(--card2);border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-size:12px;">↑ ↓</kbd></td><td style="color:var(--muted);">上下导航搜索结果</td></tr>
+          <tr><td><kbd style="background:var(--card2);border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-size:12px;">Enter</kbd></td><td style="color:var(--muted);">跳转到选中章节</td></tr>
+        </tbody>
+      </table>
+      <div class="highlight" style="margin-top:12px;">
+        <p style="font-size:13px;">搜索关键词如：<code>Skill</code>、<code>部署</code>、<code>Prisma</code>、<code>验收</code>、<code>Docker</code></p>
+      </div>
+    </div>
+  </div>
+  <div class="card" style="text-align:center;padding:32px;">
+    <p style="color:var(--muted);margin-bottom:16px;">点击下方按钮测试搜索功能</p>
+    <button onclick="openSearch()" style="background:var(--indigo);color:#fff;border:none;padding:10px 24px;border-radius:8px;font-size:14px;cursor:pointer;font-weight:600;">
+      🔍 打开搜索（Ctrl+K）
+    </button>
+  </div>
+</section>
+
+<!-- ===== SECTION 04: 使用场景 ===== -->
+<section class="section" id="s04">
+  <div class="section-header">
+    <div class="section-badge">04 &nbsp;·&nbsp; USE CASES</div>
+    <h2 class="section-title">使用场景</h2>
+    <p class="section-desc">AI Skill 编排系统适用于多种角色和场景，覆盖从个人开发到企业团队的全谱系用户。</p>
+  </div>
+  <div class="grid3">
+    <div class="card" style="border-top:3px solid var(--indigo);">
+      <div style="font-size:28px;margin-bottom:8px;">👔</div>
+      <h4 style="color:#fff;margin-bottom:4px;">产品经理</h4>
+      <span class="tag tag-indigo" style="margin-bottom:12px;display:inline-block;">需求 → 规划</span>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:12px;">将模糊需求输入S00→S02流水线，3分钟获得结构化PRD框架、功能优先级矩阵和执行时间表。不再需要专职技术顾问辅助拆解。</p>
+      <div class="card2">
+        <strong style="font-size:11px;color:var(--muted);">推荐模式</strong>
+        <p style="font-size:12px;color:var(--cyan);">模式B — 步进审批（每步确认）</p>
+      </div>
+    </div>
+    <div class="card" style="border-top:3px solid var(--cyan);">
+      <div style="font-size:28px;margin-bottom:8px;">💻</div>
+      <h4 style="color:#fff;margin-bottom:4px;">独立开发者</h4>
+      <span class="tag tag-cyan" style="margin-bottom:12px;display:inline-block;">技术选型 → 开发</span>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:12px;">用S03七维矩阵评估框架选型，S04生成P1-T2-S3三层任务拆解。将技术决策文档化，避免技术债务。</p>
+      <div class="card2">
+        <strong style="font-size:11px;color:var(--muted);">推荐模式</strong>
+        <p style="font-size:12px;color:var(--cyan);">模式C — 全自动（快速输出）</p>
+      </div>
+    </div>
+    <div class="card" style="border-top:3px solid var(--green);">
+      <div style="font-size:28px;margin-bottom:8px;">🚀</div>
+      <h4 style="color:#fff;margin-bottom:4px;">创业者</h4>
+      <span class="tag tag-green" style="margin-bottom:12px;display:inline-block;">想法 → 可行性</span>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:12px;">从商业想法出发，S00识别意图，S02生成MVP SOP，S03评估技术栈，S04输出第一个冲刺计划。一人团队也能有企业级流程。</p>
+      <div class="card2">
+        <strong style="font-size:11px;color:var(--muted);">推荐模式</strong>
+        <p style="font-size:12px;color:var(--cyan);">模式A — 单Skill（快速验证）</p>
+      </div>
+    </div>
+    <div class="card" style="border-top:3px solid var(--amber);">
+      <div style="font-size:28px;margin-bottom:8px;">🏢</div>
+      <h4 style="color:#fff;margin-bottom:4px;">企业团队</h4>
+      <span class="tag tag-amber" style="margin-bottom:12px;display:inline-block;">标准化 → 规模化</span>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:12px;">建立团队标准化AI工作流。模式D圆桌审议允许多人参与Skill输出的评审。S05验收确保每次交付质量一致。</p>
+      <div class="card2">
+        <strong style="font-size:11px;color:var(--muted);">推荐模式</strong>
+        <p style="font-size:12px;color:var(--cyan);">模式D — 圆桌+单跑</p>
+      </div>
+    </div>
+    <div class="card" style="border-top:3px solid var(--rose);">
+      <div style="font-size:28px;margin-bottom:8px;">🔬</div>
+      <h4 style="color:#fff;margin-bottom:4px;">研究者</h4>
+      <span class="tag tag-rose" style="margin-bottom:12px;display:inline-block;">文献 → 系统化</span>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:12px;">将研究课题输入流水线，生成系统化文献综述框架、研究方法论SOP、工具链评估报告。提升论文质量和研究效率。</p>
+      <div class="card2">
+        <strong style="font-size:11px;color:var(--muted);">推荐模式</strong>
+        <p style="font-size:12px;color:var(--cyan);">模式E — 深度精炼（多轮迭代）</p>
+      </div>
+    </div>
+    <div class="card" style="border-top:3px solid #a78bfa;">
+      <div style="font-size:28px;margin-bottom:8px;">📚</div>
+      <h4 style="color:#fff;margin-bottom:4px;">AI学习者</h4>
+      <span class="tag tag-indigo" style="margin-bottom:12px;display:inline-block;">实践 → 进阶</span>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:12px;">通过实际运行六层Skill，理解Prompt工程、SOP设计、评估体系的实践逻辑。每次执行都是一次AI工作流学习机会。</p>
+      <div class="card2">
+        <strong style="font-size:11px;color:var(--muted);">推荐模式</strong>
+        <p style="font-size:12px;color:var(--cyan);">模式B — 步进审批（边学边做）</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== SECTION 05: 如何安装 ===== -->
+<section class="section" id="s05">
+  <div class="section-header">
+    <div class="section-badge">05 &nbsp;·&nbsp; INSTALLATION</div>
+    <h2 class="section-title">如何安装</h2>
+    <p class="section-desc">5步完成本地环境安装，从 clone 到运行约需 5 分钟（需预装 Node.js 20+ 和 PostgreSQL 15+）。</p>
+  </div>
+
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-body">
+      <h4>克隆仓库</h4>
+      <p>从 GitHub 拉取源码</p>
+      <pre><span class="cmt"># 克隆仓库</span>
+<span class="kw">git</span> clone https://github.com/letplaylimited-MARK/ai-skill-web-app.git
+<span class="kw">cd</span> ai-skill-web-app</pre>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-body">
+      <h4>安装依赖</h4>
+      <p>使用 pnpm 安装所有依赖包（推荐）或 npm</p>
+      <pre><span class="cmt"># 使用 pnpm（推荐）</span>
+<span class="kw">pnpm</span> install
+
+<span class="cmt"># 或使用 npm</span>
+<span class="kw">npm</span> install</pre>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-body">
+      <h4>配置环境变量</h4>
+      <p>复制示例配置文件并填写 API Key 和数据库连接</p>
+      <pre><span class="kw">cp</span> .env.example .env.local
+
+<span class="cmt"># 编辑 .env.local，填写以下变量：</span>
+<span class="var">DATABASE_URL</span>=<span class="str">"postgresql://user:password@localhost:5432/aiskill"</span>
+<span class="var">ANTHROPIC_API_KEY</span>=<span class="str">"sk-ant-api03-..."</span>
+<span class="var">OPENAI_API_KEY</span>=<span class="str">"sk-proj-..."</span>        <span class="cmt"># 可选</span>
+<span class="var">NEXTAUTH_SECRET</span>=<span class="str">"your-random-secret-32-chars"</span>
+<span class="var">NEXTAUTH_URL</span>=<span class="str">"http://localhost:3000"</span></pre>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num">4</div>
+    <div class="step-body">
+      <h4>初始化数据库</h4>
+      <p>运行 Prisma 迁移并加载种子数据</p>
+      <pre><span class="cmt"># 运行数据库迁移</span>
+<span class="kw">pnpm</span> prisma migrate dev --name init
+
+<span class="cmt"># 加载示例数据（可选）</span>
+<span class="kw">pnpm</span> prisma db seed
+
+<span class="cmt"># 查看数据库管理界面</span>
+<span class="kw">pnpm</span> prisma studio</pre>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num">5</div>
+    <div class="step-body">
+      <h4>启动开发服务器</h4>
+      <p>启动 Next.js 开发服务器，访问 http://localhost:3000</p>
+      <pre><span class="cmt"># 开发模式（热重载）</span>
+<span class="kw">pnpm</span> dev
+
+<span class="cmt"># 构建生产版本</span>
+<span class="kw">pnpm</span> build && <span class="kw">pnpm</span> start
+
+<span class="cmt"># 访问应用</span>
+<span class="cmt"># 浏览器打开: http://localhost:3000</span></pre>
+    </div>
+  </div>
+
+  <div class="highlight">
+    <strong style="color:#fff;display:block;margin-bottom:4px;">系统要求</strong>
+    <p style="font-size:13px;">Node.js 20.x+, pnpm 9.x+, PostgreSQL 15+, Anthropic API Key（必需），OpenAI API Key（可选）</p>
+  </div>
+</section>
+
+<!-- ===== SECTION 06: 如何部署 ===== -->
+<section class="section" id="s06">
+  <div class="section-header">
+    <div class="section-badge">06 &nbsp;·&nbsp; DEPLOYMENT</div>
+    <h2 class="section-title">如何部署</h2>
+    <p class="section-desc">支持三种部署方式，从零代码的 Vercel 一键部署到完全自控的 VPS 自托管。</p>
+  </div>
+
+  <div class="tabs" id="deploy-tabs">
+    <button class="tab-btn active" onclick="switchTab('deploy','vercel',this)">🚀 Vercel 一键</button>
+    <button class="tab-btn" onclick="switchTab('deploy','docker',this)">🐳 Docker Compose</button>
+    <button class="tab-btn" onclick="switchTab('deploy','vps',this)">🖥 VPS 自托管</button>
+  </div>
+
+  <div id="deploy-vercel" class="tab-content active">
+    <div class="card" style="margin-bottom:16px;">
+      <h4 style="color:#fff;margin-bottom:12px;">Vercel 部署（推荐新手）</h4>
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <h4>Fork 仓库</h4>
+          <p>将 GitHub 仓库 Fork 到自己账号下</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <h4>连接 Vercel</h4>
+          <p>访问 vercel.com/new，选择 Import Git Repository，选中 fork 的仓库</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <h4>配置环境变量</h4>
+          <p>在 Vercel Project Settings → Environment Variables 添加以下变量</p>
+          <pre><span class="var">DATABASE_URL</span>=<span class="str">"postgresql://..."</span>     <span class="cmt"># Neon/Supabase/Railway</span>
+<span class="var">ANTHROPIC_API_KEY</span>=<span class="str">"sk-ant-api03-..."</span>
+<span class="var">NEXTAUTH_SECRET</span>=<span class="str">"$(openssl rand -base64 32)"</span>
+<span class="var">NEXTAUTH_URL</span>=<span class="str">"https://your-app.vercel.app"</span></pre>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <h4>部署</h4>
+          <p>点击 Deploy，等待约 2 分钟，自动获得 HTTPS 域名</p>
+        </div>
+      </div>
+    </div>
+    <div class="highlight">
+      <strong style="color:var(--green);">推荐搭配数据库：</strong>
+      <span style="font-size:13px;"> Neon（免费套餐），Supabase（PostgreSQL托管），PlanetScale（MySQL兼容）</span>
+    </div>
+  </div>
+
+  <div id="deploy-docker" class="tab-content">
+    <div class="card">
+      <h4 style="color:#fff;margin-bottom:12px;">Docker Compose 部署</h4>
+      <pre><span class="cmt"># docker-compose.yml</span>
+<span class="kw">version</span>: <span class="str">'3.9'</span>
+<span class="kw">services</span>:
+  <span class="fn">app</span>:
+    <span class="kw">build</span>: .
+    <span class="kw">ports</span>: [<span class="str">"3000:3000"</span>]
+    <span class="kw">environment</span>:
+      - <span class="var">DATABASE_URL</span>=postgresql://postgres:pass@db:5432/aiskill
+      - <span class="var">ANTHROPIC_API_KEY</span>=${ANTHROPIC_API_KEY}
+      - <span class="var">NEXTAUTH_SECRET</span>=${NEXTAUTH_SECRET}
+      - <span class="var">NEXTAUTH_URL</span>=http://localhost:3000
+    <span class="kw">depends_on</span>: [db]
+  <span class="fn">db</span>:
+    <span class="kw">image</span>: postgres:15-alpine
+    <span class="kw">environment</span>:
+      POSTGRES_PASSWORD: pass
+      POSTGRES_DB: aiskill
+    <span class="kw">volumes</span>: [pgdata:/var/lib/postgresql/data]
+<span class="kw">volumes</span>:
+  <span class="fn">pgdata</span>:</pre>
+      <pre><span class="cmt"># 启动所有服务</span>
+<span class="kw">docker</span> compose up -d
+
+<span class="cmt"># 运行数据库迁移</span>
+<span class="kw">docker</span> compose exec app pnpm prisma migrate deploy
+
+<span class="cmt"># 查看日志</span>
+<span class="kw">docker</span> compose logs -f app</pre>
+    </div>
+  </div>
+
+  <div id="deploy-vps" class="tab-content">
+    <div class="card">
+      <h4 style="color:#fff;margin-bottom:12px;">VPS 自托管（Ubuntu 22.04）</h4>
+      <pre><span class="cmt"># 1. 安装 Node.js 20</span>
+<span class="kw">curl</span> -fsSL https://deb.nodesource.com/setup_20.x | <span class="fn">sudo</span> -E bash -
+<span class="kw">sudo</span> apt-get install -y nodejs
+
+<span class="cmt"># 2. 安装 pnpm</span>
+<span class="kw">npm</span> install -g pnpm
+
+<span class="cmt"># 3. 克隆并构建</span>
+<span class="kw">git</span> clone https://github.com/letplaylimited-MARK/ai-skill-web-app.git
+<span class="kw">cd</span> ai-skill-web-app && pnpm install && pnpm build
+
+<span class="cmt"># 4. 使用 PM2 守护进程</span>
+<span class="kw">npm</span> install -g pm2
+<span class="kw">pm2</span> start "pnpm start" --name ai-skill-app
+<span class="kw">pm2</span> save && pm2 startup
+
+<span class="cmt"># 5. Nginx 反向代理配置</span>
+<span class="cmt"># /etc/nginx/sites-available/aiskill</span>
+server {
+  listen 80;
+  server_name your-domain.com;
+  location / {
+    proxy_pass http://localhost:3000;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection 'upgrade';
+  }
+}</pre>
+    </div>
+  </div>
+</section>
+
+<!-- ===== SECTION 07: 技能介绍 ===== -->
+<section class="section" id="s07">
+  <div class="section-header">
+    <div class="section-badge">07 &nbsp;·&nbsp; SKILLS</div>
+    <h2 class="section-title">六层 Skill 详解</h2>
+    <p class="section-desc">每个 Skill 承担独立职责，输出作为下一层的输入，形成端到端的智能流水线。</p>
+  </div>
+  <div class="grid2">
+
+    <div class="card skill-card skill-s00">
+      <div class="skill-num">S00</div>
+      <div class="skill-icon">🧭</div>
+      <div class="skill-title">路由导航官</div>
+      <div class="skill-sub">Navigator · 意图识别 & 路径决策</div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:10px;">解构用户需求，分析意图置信度（≥80%直接路由/60-79%确认/&lt;60%追问），精准路由到后续Skill，输出标准化交接包YAML。</p>
+      <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px;">
+        <span class="tag tag-indigo">意图识别</span>
+        <span class="tag tag-indigo">置信度评分</span>
+        <span class="tag tag-indigo">路径决策</span>
+      </div>
+      <div class="skill-io">
+        <strong>INPUT</strong>用户自然语言需求描述（任意格式）
+        <strong style="margin-top:8px;">OUTPUT</strong>意图分析报告 + YAML交接包 + 推荐路由路径
+      </div>
+    </div>
+
+    <div class="card skill-card skill-s01">
+      <div class="skill-num">S01</div>
+      <div class="skill-icon">✍️</div>
+      <div class="skill-title">提示词工程师</div>
+      <div class="skill-sub">Prompt Engineer · 四维框架优化</div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:10px;">使用 ROLE/TASK/CONTEXT/FORMAT 四维框架对原始Prompt进行结构化重构和优化，提升AI响应质量和一致性。</p>
+      <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px;">
+        <span class="tag tag-cyan">ROLE定义</span>
+        <span class="tag tag-cyan">TASK明确</span>
+        <span class="tag tag-cyan">FORMAT规范</span>
+      </div>
+      <div class="skill-io">
+        <strong>INPUT</strong>S00交接包 + 原始需求文本
+        <strong style="margin-top:8px;">OUTPUT</strong>优化后的结构化Prompt + 使用说明 + 评估分数
+      </div>
+    </div>
+
+    <div class="card skill-card skill-s02">
+      <div class="skill-num">S02</div>
+      <div class="skill-icon">📋</div>
+      <div class="skill-title">SOP工程师</div>
+      <div class="skill-sub">SOP Engineer · 10阶段标准化流程</div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:10px;">通过10阶段标准流程（需求→设计→原型→评审→开发→测试→文档→部署→验收→迭代），生成可复用的Skill工程包。</p>
+      <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px;">
+        <span class="tag tag-green">10阶段流程</span>
+        <span class="tag tag-green">阶段门控</span>
+        <span class="tag tag-green">可复用包</span>
+      </div>
+      <div class="skill-io">
+        <strong>INPUT</strong>S01优化Prompt + 项目范围说明
+        <strong style="margin-top:8px;">OUTPUT</strong>完整SOP文档 + Skill工程包 + 质量检查清单
+      </div>
+    </div>
+
+    <div class="card skill-card skill-s03">
+      <div class="skill-num">S03</div>
+      <div class="skill-icon">🔍</div>
+      <div class="skill-title">开源侦察官</div>
+      <div class="skill-sub">Open Source Scout · 七维评估矩阵</div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:10px;">七维度评估矩阵：功能性30%/易用性20%/性能15%/可维护性10%/社区活跃度10%/兼容性10%/文档5%，输出技术选型推荐。</p>
+      <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px;">
+        <span class="tag tag-amber">七维矩阵</span>
+        <span class="tag tag-amber">开源搜索</span>
+        <span class="tag tag-amber">选型建议</span>
+      </div>
+      <div class="skill-io">
+        <strong>INPUT</strong>技术需求说明 + 技术栈约束
+        <strong style="margin-top:8px;">OUTPUT</strong>评估矩阵表 + 推荐方案 + 备选方案 + 降级路径
+      </div>
+    </div>
+
+    <div class="card skill-card skill-s04">
+      <div class="skill-num">S04</div>
+      <div class="skill-icon">🗺️</div>
+      <div class="skill-title">执行规划官</div>
+      <div class="skill-sub">Planner · P1-T2-S3三层拆解</div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:10px;">将SOP工程包转化为P（阶段）/T（任务）/S（步骤）三层可执行操作手册，每步含工具/命令/预期结果/验证方式。</p>
+      <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px;">
+        <span class="tag tag-rose">P/T/S三层</span>
+        <span class="tag tag-rose">断点恢复</span>
+        <span class="tag tag-rose">操作手册</span>
+      </div>
+      <div class="skill-io">
+        <strong>INPUT</strong>S02 SOP文档 + S03选型报告
+        <strong style="margin-top:8px;">OUTPUT</strong>分阶段操作手册 + FAQ + 环境配置清单
+      </div>
+    </div>
+
+    <div class="card skill-card skill-s05">
+      <div class="skill-num">S05</div>
+      <div class="skill-icon">✅</div>
+      <div class="skill-title">测试验收工程师</div>
+      <div class="skill-sub">Validator · 五维量化验收</div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:10px;">五维度验收：功能完整性40%/文档完整性25%/可执行性20%/接口规范10%/安全5%。发布决策：PASS/CONDITIONAL_PASS/FAIL。</p>
+      <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px;">
+        <span style="background:rgba(167,139,250,.15);color:#a78bfa;border:1px solid rgba(167,139,250,.3);" class="tag">五维验收</span>
+        <span style="background:rgba(167,139,250,.15);color:#a78bfa;border:1px solid rgba(167,139,250,.3);" class="tag">P0缺陷检测</span>
+        <span style="background:rgba(167,139,250,.15);color:#a78bfa;border:1px solid rgba(167,139,250,.3);" class="tag">发布决策</span>
+      </div>
+      <div class="skill-io">
+        <strong>INPUT</strong>S04操作手册 + 交付物清单
+        <strong style="margin-top:8px;">OUTPUT</strong>验收报告 + 缺陷列表 + PASS/FAIL决策 + 飞轮改进建议
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 五种执行模式 -->
+  <div class="card" style="margin-top:20px;">
+    <h3 style="font-size:15px;color:#fff;margin-bottom:16px;">五种执行模式</h3>
+    <div class="grid3" style="gap:12px;">
+      <div class="mode-card" style="background:rgba(99,102,241,.06);">
+        <div style="font-weight:700;color:var(--indigo);margin-bottom:4px;">A — 单Skill</div>
+        <p style="font-size:12px;color:var(--muted);">选择一个Skill独立运行，适合单一任务快速验证</p>
+      </div>
+      <div class="mode-card" style="background:rgba(6,182,212,.06);">
+        <div style="font-weight:700;color:var(--cyan);margin-bottom:4px;">B — 步进审批</div>
+        <p style="font-size:12px;color:var(--muted);">每个Skill输出后暂停，用户审批后继续下一步</p>
+      </div>
+      <div class="mode-card" style="background:rgba(16,185,129,.06);">
+        <div style="font-weight:700;color:var(--green);margin-bottom:4px;">C — 全自动</div>
+        <p style="font-size:12px;color:var(--muted);">六层Skill依次自动执行，无需人工干预</p>
+      </div>
+      <div class="mode-card" style="background:rgba(245,158,11,.06);">
+        <div style="font-weight:700;color:var(--amber);margin-bottom:4px;">D — 圆桌+单跑</div>
+        <p style="font-size:12px;color:var(--muted);">多视角圆桌审议后，再执行单次完整流水线</p>
+      </div>
+      <div class="mode-card" style="background:rgba(244,63,94,.06);">
+        <div style="font-weight:700;color:var(--rose);margin-bottom:4px;">E — 深度精炼</div>
+        <p style="font-size:12px;color:var(--muted);">多轮迭代执行，每轮基于上次输出持续优化</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== SECTION 08: 对应人群 ===== -->
+<section class="section" id="s08">
+  <div class="section-header">
+    <div class="section-badge">08 &nbsp;·&nbsp; PERSONAS</div>
+    <h2 class="section-title">对应人群</h2>
+    <p class="section-desc">四类核心用户画像，精准匹配技术背景、痛点和收益，帮助快速判断系统适用性。</p>
+  </div>
+  <div class="grid2">
+
+    <div class="card" style="border-left:3px solid var(--indigo);">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+        <div style="font-size:28px;">🧑‍💼</div>
+        <div>
+          <h4 style="color:#fff;">非技术决策者</h4>
+          <span class="tag tag-indigo">零代码背景</span>
+        </div>
+      </div>
+      <div style="margin-bottom:10px;">
+        <strong style="font-size:11px;color:var(--muted);">技术背景</strong>
+        <p style="font-size:13px;color:var(--text);">熟悉业务流程，不懂编程，需要AI协助但被技术门槛阻挡</p>
+      </div>
+      <div style="margin-bottom:10px;">
+        <strong style="font-size:11px;color:var(--rose);">核心痛点</strong>
+        <p style="font-size:13px;">提出想法后无法量化评估可行性；与开发团队沟通时缺乏系统化文档</p>
+      </div>
+      <div style="margin-bottom:10px;">
+        <strong style="font-size:11px;color:var(--green);">系统收益</strong>
+        <p style="font-size:13px;">S00→S04输出PRD框架、技术选型报告、执行计划，无需技术背景即可完成</p>
+      </div>
+      <div class="card2"><strong style="font-size:11px;color:var(--muted);">推荐入口</strong><p style="font-size:12px;color:var(--cyan);">模式B + 首页快速创建向导</p></div>
+    </div>
+
+    <div class="card" style="border-left:3px solid var(--cyan);">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+        <div style="font-size:28px;">👩‍💻</div>
+        <div>
+          <h4 style="color:#fff;">全栈开发工程师</h4>
+          <span class="tag tag-cyan">中高级技术</span>
+        </div>
+      </div>
+      <div style="margin-bottom:10px;">
+        <strong style="font-size:11px;color:var(--muted);">技术背景</strong>
+        <p style="font-size:13px;color:var(--text);">熟悉 TypeScript/Python，了解 REST API，有数据库设计经验</p>
+      </div>
+      <div style="margin-bottom:10px;">
+        <strong style="font-size:11px;color:var(--rose);">核心痛点</strong>
+        <p style="font-size:13px;">技术选型耗时耗力；新功能缺少标准化开发流程；质量验收主观</p>
+      </div>
+      <div style="margin-bottom:10px;">
+        <strong style="font-size:11px;color:var(--green);">系统收益</strong>
+        <p style="font-size:13px;">S03七维矩阵10分钟完成选型；S04生成可执行任务清单；S05量化验收</p>
+      </div>
+      <div class="card2"><strong style="font-size:11px;color:var(--muted);">推荐入口</strong><p style="font-size:12px;color:var(--cyan);">模式C + API接口直接调用</p></div>
+    </div>
+
+    <div class="card" style="border-left:3px solid var(--green);">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+        <div style="font-size:28px;">🧑‍🎓</div>
+        <div>
+          <h4 style="color:#fff;">AI学习实践者</h4>
+          <span class="tag tag-green">学习成长型</span>
+        </div>
+      </div>
+      <div style="margin-bottom:10px;">
+        <strong style="font-size:11px;color:var(--muted);">技术背景</strong>
+        <p style="font-size:13px;color:var(--text);">了解AI基础，熟悉Prompt基本写法，希望深入理解AI工作流</p>
+      </div>
+      <div style="margin-bottom:10px;">
+        <strong style="font-size:11px;color:var(--rose);">核心痛点</strong>
+        <p style="font-size:13px;">Prompt效果不稳定；不知道如何系统化管理AI任务；输出质量参差不齐</p>
+      </div>
+      <div style="margin-bottom:10px;">
+        <strong style="font-size:11px;color:var(--green);">系统收益</strong>
+        <p style="font-size:13px;">通过六层Skill学习最佳实践；每次运行可查看每层的输入输出，深化理解</p>
+      </div>
+      <div class="card2"><strong style="font-size:11px;color:var(--muted);">推荐入口</strong><p style="font-size:12px;color:var(--cyan);">模式B逐步审批，边学边做</p></div>
+    </div>
+
+    <div class="card" style="border-left:3px solid var(--amber);">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+        <div style="font-size:28px;">🏗️</div>
+        <div>
+          <h4 style="color:#fff;">技术团队Leader</h4>
+          <span class="tag tag-amber">团队管理型</span>
+        </div>
+      </div>
+      <div style="margin-bottom:10px;">
+        <strong style="font-size:11px;color:var(--muted);">技术背景</strong>
+        <p style="font-size:13px;color:var(--text);">架构师/技术负责人，负责团队标准化和工程质量</p>
+      </div>
+      <div style="margin-bottom:10px;">
+        <strong style="font-size:11px;color:var(--rose);">核心痛点</strong>
+        <p style="font-size:13px;">团队AI工作流不统一；知识无法沉淀复用；不同项目交付质量波动大</p>
+      </div>
+      <div style="margin-bottom:10px;">
+        <strong style="font-size:11px;color:var(--green);">系统收益</strong>
+        <p style="font-size:13px;">建立团队统一的AI工作流标准；所有执行历史可追溯；S05保证交付质量基线</p>
+      </div>
+      <div class="card2"><strong style="font-size:11px;color:var(--muted);">推荐入口</strong><p style="font-size:12px;color:var(--cyan);">模式D圆桌审议 + 团队项目共享</p></div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ===== SECTION 09: 引导流程 ===== -->
+<section class="section" id="s09">
+  <div class="section-header">
+    <div class="section-badge">09 &nbsp;·&nbsp; ONBOARDING</div>
+    <h2 class="section-title">引导流程</h2>
+    <p class="section-desc">9步端到端用户引导，从准备环境到输出结果迭代，覆盖完整使用生命周期。</p>
+  </div>
+
+  <div class="timeline">
+    <div class="timeline-item active">
+      <h4 style="color:#fff;margin-bottom:4px;">Step 1 — 准备环境</h4>
+      <p style="font-size:13px;color:var(--muted);">完成安装（参见第05章），确认 <code>pnpm dev</code> 无报错，浏览器访问 localhost:3000 看到首页</p>
+    </div>
+    <div class="timeline-item active">
+      <h4 style="color:#fff;margin-bottom:4px;">Step 2 — 浏览首页</h4>
+      <p style="font-size:13px;color:var(--muted);">首页展示项目列表、最近运行记录、快速统计。点击右上角"新建项目"按钮</p>
+    </div>
+    <div class="timeline-item active">
+      <h4 style="color:#fff;margin-bottom:4px;">Step 3 — 创建项目</h4>
+      <p style="font-size:13px;color:var(--muted);">填写项目名称（如"电商推荐系统"）、描述、选择默认AI模型（claude-3-5-sonnet推荐）</p>
+    </div>
+    <div class="timeline-item">
+      <h4 style="color:#fff;margin-bottom:4px;">Step 4 — 选择执行模式</h4>
+      <p style="font-size:13px;color:var(--muted);">新手推荐模式B（步进审批），可以逐步了解每个Skill的输出。高级用户选模式C全自动</p>
+    </div>
+    <div class="timeline-item">
+      <h4 style="color:#fff;margin-bottom:4px;">Step 5 — 输入需求</h4>
+      <p style="font-size:13px;color:var(--muted);">在执行控制台输入框填写需求，越详细越好。支持多段落。点击"开始执行"按钮</p>
+    </div>
+    <div class="timeline-item">
+      <h4 style="color:#fff;margin-bottom:4px;">Step 6 — 观察执行过程</h4>
+      <p style="font-size:13px;color:var(--muted);">实时查看每个Skill的流式输出。模式B下每步完成后有"通过"/"重试"按钮，可干预流程</p>
+    </div>
+    <div class="timeline-item">
+      <h4 style="color:#fff;margin-bottom:4px;">Step 7 — 查看结果报告</h4>
+      <p style="font-size:13px;color:var(--muted);">执行完成后跳转结果页，包含每层Skill的详细输出，可切换JSON/Markdown视图</p>
+    </div>
+    <div class="timeline-item">
+      <h4 style="color:#fff;margin-bottom:4px;">Step 8 — 导出报告</h4>
+      <p style="font-size:13px;color:var(--muted);">点击"导出"按钮，选择下载JSON（用于程序处理）或Markdown（用于文档分享）</p>
+    </div>
+    <div class="timeline-item">
+      <h4 style="color:#fff;margin-bottom:4px;">Step 9 — 迭代优化</h4>
+      <p style="font-size:13px;color:var(--muted);">基于首次输出，修改需求描述后再次运行。或切换到模式E深度精炼，持续迭代至满意</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===== SECTION 10: 模拟案例 ===== -->
+<section class="section" id="s10">
+  <div class="section-header">
+    <div class="section-badge">10 &nbsp;·&nbsp; CASE STUDY</div>
+    <h2 class="section-title">模拟案例</h2>
+    <p class="section-desc">两个完整端到端案例，展示每层Skill的真实输入输出，帮助理解系统工作方式。</p>
+  </div>
+
+  <div class="tabs" id="case-tabs">
+    <button class="tab-btn active" onclick="switchTab('case','case1',this)">案例一：电商推荐系统规划</button>
+    <button class="tab-btn" onclick="switchTab('case','case2',this)">案例二：SaaS工具技术选型</button>
+  </div>
+
+  <div id="case-case1" class="tab-content active">
+    <div class="highlight" style="margin-bottom:20px;">
+      <strong style="color:#fff;">场景：</strong><span style="font-size:13px;"> 某电商创业公司CTO，需要规划一套基于用户行为的个性化推荐系统，团队3人，预算有限。</span>
+    </div>
+
+    <div class="card" style="margin-bottom:16px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+        <span style="background:var(--indigo);color:#fff;padding:3px 8px;border-radius:4px;font-size:12px;font-weight:700;">S00</span>
+        <h4 style="color:#fff;">路由导航官 输出</h4>
+      </div>
+      <div class="card2" style="margin-bottom:8px;">
+        <strong style="font-size:11px;color:var(--muted);">INPUT</strong>
+        <p style="font-size:13px;margin-top:4px;">"我需要给我们电商平台做个推荐系统，基于用户浏览记录和购买历史，团队只有3个人，要快速上线"</p>
+      </div>
+      <div class="card2">
+        <strong style="font-size:11px;color:var(--green);">OUTPUT（置信度 87%）</strong>
+        <pre style="margin-top:8px;font-size:12px;"><span class="var">intent</span>: system_planning
+<span class="var">confidence</span>: 0.87
+<span class="var">domain</span>: e-commerce/recommendation
+<span class="var">scale</span>: small_team_3p
+<span class="var">priority</span>: speed_to_market
+<span class="var">recommended_route</span>: [S01, S02, S03, S04]
+<span class="var">skip</span>: S05 <span class="cmt"># 先快速验证，后期补验收</span></pre>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:16px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+        <span style="background:var(--cyan);color:#fff;padding:3px 8px;border-radius:4px;font-size:12px;font-weight:700;">S02</span>
+        <h4 style="color:#fff;">SOP工程师 输出（摘要）</h4>
+      </div>
+      <div class="card2">
+        <strong style="font-size:11px;color:var(--green);">OUTPUT — 10阶段SOP</strong>
+        <div style="margin-top:8px;display:flex;flex-direction:column;gap:6px;">
+          <div style="display:flex;gap:8px;align-items:center;">
+            <span style="background:var(--indigo);color:#fff;width:20px;height:20px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:10px;min-width:20px;">1</span>
+            <span style="font-size:12px;"><strong>需求确认</strong>：定义推荐场景（首页/商品页/购物车），确定冷启动策略</span>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <span style="background:var(--indigo);color:#fff;width:20px;height:20px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:10px;min-width:20px;">2</span>
+            <span style="font-size:12px;"><strong>数据架构</strong>：用户行为表Schema，事件埋点规范（click/view/purchase）</span>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <span style="background:var(--indigo);color:#fff;width:20px;height:20px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:10px;min-width:20px;">3</span>
+            <span style="font-size:12px;"><strong>算法选型</strong>：协同过滤 vs 内容过滤 vs 混合推荐，小团队推荐轻量实现</span>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <span style="background:var(--cyan);color:#fff;width:20px;height:20px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:10px;min-width:20px;">4</span>
+            <span style="font-size:12px;color:var(--muted);">... 共10个阶段，含验收标准和回滚方案</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+        <span style="background:var(--amber);color:#fff;padding:3px 8px;border-radius:4px;font-size:12px;font-weight:700;">S03</span>
+        <h4 style="color:#fff;">开源侦察官 — 技术选型结果</h4>
+      </div>
+      <table>
+        <thead><tr><th>方案</th><th>功能30%</th><th>易用20%</th><th>社区10%</th><th>综合得分</th><th>推荐</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>Recombee</strong></td>
+            <td>9/10</td><td>8/10</td><td>7/10</td>
+            <td style="color:var(--green);">8.3</td>
+            <td><span class="tag tag-green">首选</span></td>
+          </tr>
+          <tr>
+            <td><strong>LightFM</strong></td>
+            <td>8/10</td><td>6/10</td><td>8/10</td>
+            <td style="color:var(--amber);">7.6</td>
+            <td><span class="tag tag-amber">备选</span></td>
+          </tr>
+          <tr>
+            <td><strong>自研协同过滤</strong></td>
+            <td>7/10</td><td>5/10</td><td>N/A</td>
+            <td style="color:var(--muted);">6.2</td>
+            <td><span class="tag tag-rose">不推荐</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="case-case2" class="tab-content">
+    <div class="highlight" style="margin-bottom:20px;">
+      <strong style="color:#fff;">场景：</strong><span style="font-size:13px;"> 独立开发者，计划开发一款团队协作SaaS工具，需要在3种技术栈中做出选型决策。</span>
+    </div>
+
+    <div class="card" style="margin-bottom:16px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+        <span style="background:var(--indigo);color:#fff;padding:3px 8px;border-radius:4px;font-size:12px;font-weight:700;">S00</span>
+        <h4 style="color:#fff;">路由导航官 输出</h4>
+      </div>
+      <div class="card2" style="margin-bottom:8px;">
+        <strong style="font-size:11px;color:var(--muted);">INPUT</strong>
+        <p style="font-size:13px;margin-top:4px;">"我要做一个团队协作工具，类似Notion但更轻量。纠结Next.js+Supabase、Remix+PlanetScale、还是纯Node+PostgreSQL，哪个适合solo开发？"</p>
+      </div>
+      <div class="card2">
+        <strong style="font-size:11px;color:var(--green);">OUTPUT（置信度 92%）</strong>
+        <pre style="margin-top:8px;font-size:12px;"><span class="var">intent</span>: tech_stack_selection
+<span class="var">confidence</span>: 0.92
+<span class="var">domain</span>: saas/collaboration
+<span class="var">constraint</span>: solo_developer
+<span class="var">recommended_route</span>: [S03]  <span class="cmt"># 直接跳到选型</span>
+<span class="var">context</span>:
+  candidates: [next-supabase, remix-planetscale, node-postgres]
+  priority: developer_experience, time_to_market</pre>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+        <span style="background:var(--amber);color:#fff;padding:3px 8px;border-radius:4px;font-size:12px;font-weight:700;">S03</span>
+        <h4 style="color:#fff;">七维评估矩阵结果</h4>
+      </div>
+      <table>
+        <thead><tr><th>维度</th><th>权重</th><th>Next.js+Supabase</th><th>Remix+PlanetScale</th><th>Node+PostgreSQL</th></tr></thead>
+        <tbody>
+          <tr><td>功能完整性</td><td>30%</td><td style="color:var(--green);">9.0</td><td>8.0</td><td>7.5</td></tr>
+          <tr><td>易用性</td><td>20%</td><td style="color:var(--green);">9.5</td><td>7.5</td><td>6.0</td></tr>
+          <tr><td>性能</td><td>15%</td><td>8.0</td><td style="color:var(--green);">8.5</td><td>8.0</td></tr>
+          <tr><td>可维护性</td><td>10%</td><td>8.5</td><td>7.5</td><td style="color:var(--green);">9.0</td></tr>
+          <tr><td>社区活跃度</td><td>10%</td><td style="color:var(--green);">9.5</td><td>8.0</td><td>9.0</td></tr>
+          <tr><td>兼容性</td><td>10%</td><td style="color:var(--green);">9.0</td><td>7.5</td><td>8.5</td></tr>
+          <tr><td>文档质量</td><td>5%</td><td style="color:var(--green);">9.5</td><td>8.0</td><td>7.5</td></tr>
+          <tr style="background:rgba(99,102,241,.05);">
+            <td><strong>综合得分</strong></td><td>100%</td>
+            <td style="color:var(--green);font-weight:700;">8.97 ✓</td>
+            <td style="color:var(--amber);">7.89</td>
+            <td style="color:var(--muted);">7.63</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="highlight" style="margin-top:16px;">
+        <strong style="color:var(--green);">推荐：Next.js + Supabase</strong>
+        <p style="font-size:13px;margin-top:4px;">最高综合得分8.97。Supabase提供免费PostgreSQL+Auth+Realtime，Next.js App Router内置API路由，solo开发者最快实现全功能SaaS。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== SECTION 11: 使用指南 ===== -->
+<section class="section" id="s11">
+  <div class="section-header">
+    <div class="section-badge">11 &nbsp;·&nbsp; USER GUIDE</div>
+    <h2 class="section-title">使用指南</h2>
+    <p class="section-desc">五个核心页面的详细操作说明，掌握每个界面的功能和最佳实践。</p>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:16px;">
+
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+        <span style="background:var(--indigo);color:#fff;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:700;">首页 /</span>
+        <h4 style="color:#fff;">项目仪表板</h4>
+      </div>
+      <div class="grid2">
+        <div>
+          <p style="font-size:13px;color:var(--muted);margin-bottom:8px;">首页展示所有项目列表，每个项目卡片显示：名称、最近运行时间、运行次数、状态徽章。</p>
+          <ul style="font-size:13px;color:var(--muted);list-style:disc;padding-left:16px;line-height:2;">
+            <li>点击"新建项目"创建空白项目</li>
+            <li>点击项目卡片进入项目详情</li>
+            <li>右上角全局统计：总项目数/总运行次数</li>
+          </ul>
+        </div>
+        <div class="card2">
+          <strong style="font-size:11px;color:var(--muted);">快捷操作</strong>
+          <div style="margin-top:8px;display:flex;flex-direction:column;gap:6px;">
+            <div style="font-size:12px;display:flex;justify-content:space-between;"><span>搜索项目</span><kbd style="background:var(--bg);padding:2px 6px;border-radius:3px;font-size:10px;">Ctrl+F</kbd></div>
+            <div style="font-size:12px;display:flex;justify-content:space-between;"><span>新建项目</span><kbd style="background:var(--bg);padding:2px 6px;border-radius:3px;font-size:10px;">N</kbd></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+        <span style="background:var(--cyan);color:#fff;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:700;">执行控制台 /run/[id]</span>
+        <h4 style="color:#fff;">Skill流水线执行</h4>
+      </div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:8px;">核心操作界面。左侧是Skill流水线状态可视化，右侧是实时SSE流式输出。</p>
+      <div class="grid3">
+        <div class="card2"><strong style="font-size:11px;color:var(--muted);">输入区</strong><p style="font-size:12px;margin-top:4px;">多行文本框，支持Markdown，输入需求后按Ctrl+Enter或点击执行按钮</p></div>
+        <div class="card2"><strong style="font-size:11px;color:var(--muted);">状态流</strong><p style="font-size:12px;margin-top:4px;">每个Skill显示「等待/运行中/完成/错误」四种状态，附带运行时长</p></div>
+        <div class="card2"><strong style="font-size:11px;color:var(--muted);">输出区</strong><p style="font-size:12px;margin-top:4px;">实时流式文字输出，自动滚动到最新内容，支持暂停/恢复查看</p></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+        <span style="background:var(--amber);color:#fff;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:700;">圆桌审议</span>
+        <h4 style="color:#fff;">模式D专属组件</h4>
+      </div>
+      <p style="font-size:13px;color:var(--muted);">模式D专属界面。系统从不同视角（技术/产品/用户/商业）对需求进行多角度审议，每个视角输出独立观点，最终综合生成执行决策。</p>
+      <div class="highlight" style="margin-top:10px;">
+        <p style="font-size:13px;">圆桌会议结束后，可选择"采纳全部意见"或"逐条过滤"，决定哪些观点纳入后续执行流水线。</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+        <span style="background:var(--green);color:#fff;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:700;">结果报告</span>
+        <h4 style="color:#fff;">执行结果查看与导出</h4>
+      </div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:8px;">展示完整执行结果，包含每层Skill的输入输出、运行时长、Token消耗统计。</p>
+      <div class="grid2">
+        <div class="card2"><strong style="font-size:11px;color:var(--muted);">视图切换</strong><p style="font-size:12px;margin-top:4px;">JSON格式（适合开发者集成）/ Markdown格式（适合文档分享）</p></div>
+        <div class="card2"><strong style="font-size:11px;color:var(--muted);">导出选项</strong><p style="font-size:12px;margin-top:4px;">下载JSON文件 / 复制Markdown / 分享链接（需登录）</p></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+        <span style="background:var(--rose);color:#fff;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:700;">项目管理 /projects/[id]</span>
+        <h4 style="color:#fff;">历史记录管理</h4>
+      </div>
+      <p style="font-size:13px;color:var(--muted);">查看项目所有历史运行记录，支持按时间/状态/模式过滤。每条记录显示摘要，点击查看完整结果。支持对比两次运行结果的差异。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===== SECTION 12: 使用技巧 ===== -->
+<section class="section" id="s12">
+  <div class="section-header">
+    <div class="section-badge">12 &nbsp;·&nbsp; TIPS</div>
+    <h2 class="section-title">使用技巧</h2>
+    <p class="section-desc">12条实践技巧，分四组掌握系统的高阶用法，提升输出质量。</p>
+  </div>
+
+  <div class="grid2">
+    <div class="card" style="border-top:3px solid var(--indigo);">
+      <h4 style="color:var(--indigo);margin-bottom:12px;">A — 输入优化</h4>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div class="card2">
+          <strong style="font-size:12px;color:#fff;">技巧 1：给定约束条件</strong>
+          <p style="font-size:12px;color:var(--muted);margin-top:4px;">在需求中明确团队规模、技术栈偏好、预算上限。S03选型会自动过滤不符合约束的方案。</p>
+        </div>
+        <div class="card2">
+          <strong style="font-size:12px;color:#fff;">技巧 2：描述背景而非解决方案</strong>
+          <p style="font-size:12px;color:var(--muted);margin-top:4px;">不要预设答案，描述问题背景。"我的用户流失率高"比"给我做一个用户留存系统"效果更好。</p>
+        </div>
+        <div class="card2">
+          <strong style="font-size:12px;color:#fff;">技巧 3：设定优先级</strong>
+          <p style="font-size:12px;color:var(--muted);margin-top:4px;">明确"最重要的一件事"，如"以快速上线为第一优先，可以牺牲扩展性"。S04规划会据此调整任务顺序。</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="border-top:3px solid var(--cyan);">
+      <h4 style="color:var(--cyan);margin-bottom:12px;">B — 模式选择</h4>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div class="card2">
+          <strong style="font-size:12px;color:#fff;">技巧 4：新需求用模式B</strong>
+          <p style="font-size:12px;color:var(--muted);margin-top:4px;">第一次执行新类型需求，用步进审批模式观察每个Skill输出，建立对系统的信任感后再切换模式C。</p>
+        </div>
+        <div class="card2">
+          <strong style="font-size:12px;color:#fff;">技巧 5：重复任务用模式C</strong>
+          <p style="font-size:12px;color:var(--muted);margin-top:4px;">对于熟悉的任务类型，全自动模式C效率最高。结合模板化输入可实现批量处理。</p>
+        </div>
+        <div class="card2">
+          <strong style="font-size:12px;color:#fff;">技巧 6：重要决策用模式D</strong>
+          <p style="font-size:12px;color:var(--muted);margin-top:4px;">技术选型、架构设计等高影响决策，先圆桌审议避免视角盲区，再单次精确执行。</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="border-top:3px solid var(--green);">
+      <h4 style="color:var(--green);margin-bottom:12px;">C — 执行策略</h4>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div class="card2">
+          <strong style="font-size:12px;color:#fff;">技巧 7：分阶段运行</strong>
+          <p style="font-size:12px;color:var(--muted);margin-top:4px;">大型项目不要一次跑全部Skill。先用模式A运行S00验证需求理解，再决定后续路径。</p>
+        </div>
+        <div class="card2">
+          <strong style="font-size:12px;color:#fff;">技巧 8：充分利用S05验收</strong>
+          <p style="font-size:12px;color:var(--muted);margin-top:4px;">在交付前必跑S05。即使前面Skill输出看起来很好，S05可能发现隐性缺口（P0缺陷立即阻止发布）。</p>
+        </div>
+        <div class="card2">
+          <strong style="font-size:12px;color:#fff;">技巧 9：保存中间结果</strong>
+          <p style="font-size:12px;color:var(--muted);margin-top:4px;">每次S01输出的优化Prompt值得单独保存。可复用于后续同类项目，无需重复S00-S01流程。</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="border-top:3px solid var(--amber);">
+      <h4 style="color:var(--amber);margin-bottom:12px;">D — 输出利用</h4>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div class="card2">
+          <strong style="font-size:12px;color:#fff;">技巧 10：JSON结果接入工具链</strong>
+          <p style="font-size:12px;color:var(--muted);margin-top:4px;">S04输出的JSON任务列表可直接导入Jira/Linear/GitHub Issues。字段映射：title→task title, steps→subtasks。</p>
+        </div>
+        <div class="card2">
+          <strong style="font-size:12px;color:#fff;">技巧 11：Markdown用于文档</strong>
+          <p style="font-size:12px;color:var(--muted);margin-top:4px;">S02 SOP的Markdown输出可直接粘贴到Notion/Confluence，格式完整，无需二次编辑。</p>
+        </div>
+        <div class="card2">
+          <strong style="font-size:12px;color:#fff;">技巧 12：建立项目模板库</strong>
+          <p style="font-size:12px;color:var(--muted);margin-top:4px;">将同类项目的第一次执行结果存档，作为后续同类项目的输入参考。形成组织级Skill知识库。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== SECTION 13: 输出结果 ===== -->
+<section class="section" id="s13">
+  <div class="section-header">
+    <div class="section-badge">13 &nbsp;·&nbsp; OUTPUT</div>
+    <h2 class="section-title">输出结果</h2>
+    <p class="section-desc">系统支持 JSON 和 Markdown 两种输出格式，真实示例展示实际报告内容。</p>
+  </div>
+
+  <div class="tabs" id="output-tabs">
+    <button class="tab-btn active" onclick="switchTab('output','json',this)">JSON 格式报告</button>
+    <button class="tab-btn" onclick="switchTab('output','md',this)">Markdown 格式报告</button>
+  </div>
+
+  <div id="output-json" class="tab-content active">
+    <div class="card">
+      <h4 style="color:#fff;margin-bottom:12px;">完整 JSON 报告结构（以电商推荐系统为例）</h4>
+      <pre style="font-size:12px;">{
+  <span class="str">"runId"</span>: <span class="str">"run_2024_0331_abc123"</span>,
+  <span class="str">"projectName"</span>: <span class="str">"电商推荐系统规划"</span>,
+  <span class="str">"mode"</span>: <span class="str">"C"</span>,
+  <span class="str">"model"</span>: <span class="str">"claude-3-5-sonnet-20241022"</span>,
+  <span class="str">"executedAt"</span>: <span class="str">"2024-03-31T14:23:00Z"</span>,
+  <span class="str">"totalTokens"</span>: <span class="var">18432</span>,
+  <span class="str">"totalDurationMs"</span>: <span class="var">47230</span>,
+  <span class="str">"skills"</span>: [
+    {
+      <span class="str">"skill"</span>: <span class="str">"S00"</span>,
+      <span class="str">"name"</span>: <span class="str">"路由导航官"</span>,
+      <span class="str">"status"</span>: <span class="str">"completed"</span>,
+      <span class="str">"durationMs"</span>: <span class="var">3210</span>,
+      <span class="str">"tokens"</span>: { <span class="str">"input"</span>: <span class="var">512</span>, <span class="str">"output"</span>: <span class="var">384</span> },
+      <span class="str">"output"</span>: {
+        <span class="str">"intent"</span>: <span class="str">"system_planning"</span>,
+        <span class="str">"confidence"</span>: <span class="var">0.87</span>,
+        <span class="str">"domain"</span>: <span class="str">"e-commerce/recommendation"</span>,
+        <span class="str">"recommendedRoute"</span>: [<span class="str">"S01"</span>, <span class="str">"S02"</span>, <span class="str">"S03"</span>, <span class="str">"S04"</span>],
+        <span class="str">"handoff"</span>: {
+          <span class="str">"projectContext"</span>: <span class="str">"Small 3-person team..."</span>,
+          <span class="str">"keyConstraints"</span>: [<span class="str">"speed_to_market"</span>, <span class="str">"budget_limited"</span>]
+        }
+      }
+    },
+    {
+      <span class="str">"skill"</span>: <span class="str">"S03"</span>,
+      <span class="str">"name"</span>: <span class="str">"开源侦察官"</span>,
+      <span class="str">"status"</span>: <span class="str">"completed"</span>,
+      <span class="str">"durationMs"</span>: <span class="var">12400</span>,
+      <span class="str">"output"</span>: {
+        <span class="str">"evaluationMatrix"</span>: [
+          {
+            <span class="str">"solution"</span>: <span class="str">"Recombee"</span>,
+            <span class="str">"scores"</span>: { <span class="str">"functionality"</span>: <span class="var">9.0</span>, <span class="str">"usability"</span>: <span class="var">8.0</span>, <span class="str">"community"</span>: <span class="var">7.0</span> },
+            <span class="str">"weightedScore"</span>: <span class="var">8.3</span>,
+            <span class="str">"recommendation"</span>: <span class="str">"PRIMARY"</span>
+          }
+        ],
+        <span class="str">"topPick"</span>: <span class="str">"Recombee"</span>,
+        <span class="str">"rationale"</span>: <span class="str">"Managed recommendation API..."</span>
+      }
+    }
+  ],
+  <span class="str">"summary"</span>: {
+    <span class="str">"keyDecisions"</span>: [<span class="str">"Use Recombee for recommendations"</span>, <span class="str">"3-phase delivery plan"</span>],
+    <span class="str">"nextActions"</span>: [<span class="str">"Set up Recombee trial account"</span>, <span class="str">"Design event schema"</span>],
+    <span class="str">"overallQuality"</span>: <span class="var">8.4</span>
+  }
+}</pre>
+    </div>
+  </div>
+
+  <div id="output-md" class="tab-content">
+    <div class="card">
+      <h4 style="color:#fff;margin-bottom:12px;">Markdown 格式报告（摘录）</h4>
+      <pre style="font-size:12px;"><span class="cmt"># AI Skill 执行报告</span>
+<span class="cmt">## 项目：电商推荐系统规划</span>
+<span class="cmt">- 执行时间：2024-03-31 14:23</span>
+<span class="cmt">- 执行模式：C（全自动）</span>
+<span class="cmt">- 使用模型：claude-3-5-sonnet</span>
+
+<span class="cmt">---</span>
+
+<span class="cmt">## S00 路由导航官</span>
+
+<span class="kw">**意图识别**</span>：系统规划（置信度 87%）
+<span class="kw">**推荐路径**</span>：S01 → S02 → S03 → S04
+
+<span class="cmt">---</span>
+
+<span class="cmt">## S02 SOP工程师</span>
+
+<span class="kw">### 推荐系统开发 SOP（10阶段）</span>
+
+<span class="kw">**阶段1：需求确认**</span>
+- 定义推荐场景：首页猜你喜欢、商品页相似推荐、购物车关联推荐
+- 冷启动策略：新用户展示热门商品 + 基于类目的初始推荐
+- 验收标准：产品需求文档经PM确认签字
+
+<span class="kw">**阶段2：数据架构设计**</span>
+- 用户行为表：user_id, item_id, event_type(view/click/purchase), timestamp
+- 商品特征表：item_id, category, price_range, tags[]
+- 迁移脚本：见 /migrations/001_recommendation_tables.sql
+
+<span class="cmt">---</span>
+
+<span class="cmt">## S03 开源侦察官</span>
+
+<span class="kw">### 技术选型推荐：Recombee</span>
+
+<span class="kw">**推荐理由**</span>
+Recombee 提供托管式推荐API，免去维护ML基础设施的负担。
+对于3人团队，可在1周内完成集成并上线。
+
+<span class="kw">**集成示例（TypeScript）**</span>
+```typescript
+const recombee = new RecombeeClient(DB_ID, API_KEY)
+await recombee.send(new AddDetailView(userId, itemId))
+const recs = await recombee.send(
+  new RecommendItemsToUser(userId, 10)
+)
+```
+
+<span class="cmt">---</span>
+
+<span class="cmt">## 执行总结</span>
+
+<span class="kw">**关键决策**</span>
+1. 选用 Recombee 作为推荐引擎（综合评分 8.3/10）
+2. 三阶段交付：埋点→基础推荐→个性化优化
+
+<span class="kw">**下一步行动**</span>
+- [ ] 创建 Recombee 试用账号（免费 100k 请求/月）
+- [ ] 设计事件埋点 Schema
+- [ ] 完成 Phase 1（预计 2周）</pre>
+    </div>
+  </div>
+</section>
+
+<!-- ===== SECTION 14: 准备工作 ===== -->
+<section class="section" id="s14">
+  <div class="section-header">
+    <div class="section-badge">14 &nbsp;·&nbsp; PREREQUISITES</div>
+    <h2 class="section-title">准备工作</h2>
+    <p class="section-desc">在安装系统前，完成环境准备和 API Key 获取，确保一次性成功部署。</p>
+  </div>
+
+  <div class="grid2" style="margin-bottom:20px;">
+    <div class="card">
+      <h4 style="color:#fff;margin-bottom:12px;">环境要求清单</h4>
+      <table>
+        <thead><tr><th>组件</th><th>版本要求</th><th>状态</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Node.js</td><td>20.x LTS</td>
+            <td><span class="tag tag-green">必需</span></td>
+          </tr>
+          <tr>
+            <td>pnpm</td><td>9.x+</td>
+            <td><span class="tag tag-green">推荐</span></td>
+          </tr>
+          <tr>
+            <td>npm</td><td>10.x+</td>
+            <td><span class="tag tag-amber">备选</span></td>
+          </tr>
+          <tr>
+            <td>PostgreSQL</td><td>15.x+</td>
+            <td><span class="tag tag-green">必需</span></td>
+          </tr>
+          <tr>
+            <td>Git</td><td>2.x+</td>
+            <td><span class="tag tag-green">必需</span></td>
+          </tr>
+          <tr>
+            <td>Docker</td><td>24.x+</td>
+            <td><span class="tag tag-indigo">容器部署</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h4 style="color:#fff;margin-bottom:12px;">验证安装命令</h4>
+      <pre><span class="cmt"># 检查 Node.js 版本</span>
+<span class="kw">node</span> --version
+<span class="cmt"># 期望输出: v20.x.x 或更高</span>
+
+<span class="cmt"># 检查 pnpm 版本</span>
+<span class="kw">pnpm</span> --version
+<span class="cmt"># 期望输出: 9.x.x</span>
+
+<span class="cmt"># 检查 PostgreSQL 连接</span>
+<span class="kw">psql</span> --version
+<span class="cmt"># 期望输出: psql (PostgreSQL) 15.x</span>
+
+<span class="cmt"># 检查 Git 版本</span>
+<span class="kw">git</span> --version
+<span class="cmt"># 期望输出: git version 2.x.x</span></pre>
+    </div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <h4 style="color:#fff;margin-bottom:12px;">获取 Anthropic API Key</h4>
+      <div class="step" style="margin-bottom:12px;">
+        <div class="step-num" style="background:var(--rose);">1</div>
+        <div class="step-body">
+          <h4>注册账号</h4>
+          <p>访问 console.anthropic.com 注册开发者账号</p>
+        </div>
+      </div>
+      <div class="step" style="margin-bottom:12px;">
+        <div class="step-num" style="background:var(--rose);">2</div>
+        <div class="step-body">
+          <h4>创建 API Key</h4>
+          <p>进入 API Keys 页面，点击"Create Key"，给 Key 命名</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num" style="background:var(--rose);">3</div>
+        <div class="step-body">
+          <h4>充值额度</h4>
+          <p>账单页面充值至少 $5，新账号赠送 $5 免费额度</p>
+        </div>
+      </div>
+      <div class="highlight" style="margin-top:12px;">
+        <p style="font-size:12px;">Key 格式：<code>sk-ant-api03-xxxxxxxxxx</code>，复制后立即保存，只显示一次</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h4 style="color:#fff;margin-bottom:12px;">PostgreSQL 数据库准备</h4>
+      <pre><span class="cmt"># 本地 PostgreSQL 创建数据库</span>
+<span class="kw">psql</span> -U postgres
+
+<span class="cmt">-- 在 psql 中执行：</span>
+<span class="fn">CREATE</span> DATABASE aiskill;
+<span class="fn">CREATE</span> USER aiskill_user WITH PASSWORD <span class="str">'secure_pass'</span>;
+<span class="fn">GRANT</span> ALL PRIVILEGES ON DATABASE aiskill TO aiskill_user;
+\q
+
+<span class="cmt"># 测试连接</span>
+<span class="kw">psql</span> -U aiskill_user -d aiskill -h localhost</pre>
+      <div class="card2" style="margin-top:12px;">
+        <strong style="font-size:11px;color:var(--muted);">免费云端数据库选项</strong>
+        <div style="margin-top:6px;display:flex;flex-direction:column;gap:4px;">
+          <div style="font-size:12px;display:flex;justify-content:space-between;"><span style="color:var(--cyan);">Neon</span><span style="color:var(--muted);">免费 0.5 GB，Serverless PostgreSQL</span></div>
+          <div style="font-size:12px;display:flex;justify-content:space-between;"><span style="color:var(--cyan);">Supabase</span><span style="color:var(--muted);">免费 500 MB，含Auth和API</span></div>
+          <div style="font-size:12px;display:flex;justify-content:space-between;"><span style="color:var(--cyan);">Railway</span><span style="color:var(--muted);">$5/月，一键部署</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== SECTION 15: 学习指令 ===== -->
+<section class="section" id="s15">
+  <div class="section-header">
+    <div class="section-badge">15 &nbsp;·&nbsp; LEARNING</div>
+    <h2 class="section-title">学习指令</h2>
+    <p class="section-desc">进阶学习路径、10个即用Prompt模板和常用 API 接口速查，帮助快速掌握系统全貌。</p>
+  </div>
+
+  <!-- 进阶学习路径 -->
+  <div class="card" style="margin-bottom:20px;">
+    <h4 style="color:#fff;margin-bottom:16px;">进阶学习路径（4阶段）</h4>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <div class="card2" style="flex:1;min-width:200px;">
+        <div style="color:var(--indigo);font-weight:700;margin-bottom:6px;">Week 1 — 快速入门</div>
+        <ul style="list-style:none;font-size:12px;color:var(--muted);line-height:1.8;">
+          <li>✓ 完成本地安装</li>
+          <li>✓ 用模式B跑第一个需求</li>
+          <li>✓ 阅读 AGENT.md 和 CONTEXT.md</li>
+          <li>✓ 理解六层Skill的职责边界</li>
+        </ul>
+      </div>
+      <div class="card2" style="flex:1;min-width:200px;">
+        <div style="color:var(--cyan);font-weight:700;margin-bottom:6px;">Week 2 — 深度理解</div>
+        <ul style="list-style:none;font-size:12px;color:var(--muted);line-height:1.8;">
+          <li>✓ 阅读 src/lib/skills/ 源码</li>
+          <li>✓ 理解 SSE 流式输出机制</li>
+          <li>✓ 调试一次执行失败的案例</li>
+          <li>✓ 修改 S03 评估权重配置</li>
+        </ul>
+      </div>
+      <div class="card2" style="flex:1;min-width:200px;">
+        <div style="color:var(--green);font-weight:700;margin-bottom:6px;">Week 3 — 定制改造</div>
+        <ul style="list-style:none;font-size:12px;color:var(--muted);line-height:1.8;">
+          <li>✓ 添加自定义 Skill S06</li>
+          <li>✓ 接入企业内部数据库</li>
+          <li>✓ 自定义结果导出格式</li>
+          <li>✓ 配置 Webhook 回调</li>
+        </ul>
+      </div>
+      <div class="card2" style="flex:1;min-width:200px;">
+        <div style="color:var(--amber);font-weight:700;margin-bottom:6px;">Week 4+ — 规模化</div>
+        <ul style="list-style:none;font-size:12px;color:var(--muted);line-height:1.8;">
+          <li>✓ 部署到生产环境</li>
+          <li>✓ 建立团队Skill模板库</li>
+          <li>✓ 集成 CI/CD 自动触发</li>
+          <li>✓ 贡献开源或 Fork 定制</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- 10个Prompt模板 -->
+  <div class="card" style="margin-bottom:20px;">
+    <h4 style="color:#fff;margin-bottom:16px;">10 个即用 Prompt 模板</h4>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <div class="card2">
+        <strong style="font-size:11px;color:var(--indigo);">T01 — 新功能规划</strong>
+        <p style="font-size:12px;color:var(--muted);margin-top:4px;font-style:italic;">"我要为 [产品名] 增加 [功能名] 功能。目标用户是 [用户群]，核心价值是 [价值点]。当前技术栈：[栈]，团队规模：[人数]，期望在 [时间] 内完成。"</p>
+      </div>
+      <div class="card2">
+        <strong style="font-size:11px;color:var(--cyan);">T02 — 技术选型决策</strong>
+        <p style="font-size:12px;color:var(--muted);margin-top:4px;font-style:italic;">"需要为 [场景] 选择 [技术类型] 方案。备选项有：[A/B/C]。约束条件：[开源/预算/学习曲线/社区支持]。现有技术栈：[栈]。"</p>
+      </div>
+      <div class="card2">
+        <strong style="font-size:11px;color:var(--green);">T03 — MVP快速规划</strong>
+        <p style="font-size:12px;color:var(--muted);margin-top:4px;font-style:italic;">"我想做一个 [产品类型]，解决 [痛点]。目标用户：[画像]。MVP 核心功能 3 个：[功能1/2/3]。Solo 开发，希望 4 周内上线可用版本。"</p>
+      </div>
+      <div class="card2">
+        <strong style="font-size:11px;color:var(--amber);">T04 — 系统重构评估</strong>
+        <p style="font-size:12px;color:var(--muted);margin-top:4px;font-style:italic;">"现有系统 [描述] 出现 [问题]，考虑重构。现有技术债：[列举]。业务不中断要求：[要求]。请评估重构方案并给出分阶段计划。"</p>
+      </div>
+      <div class="card2">
+        <strong style="font-size:11px;color:var(--rose);">T05 — 性能优化方案</strong>
+        <p style="font-size:12px;color:var(--muted);margin-top:4px;font-style:italic;">"[系统名] 在 [场景] 下出现性能问题：[具体指标]。当前架构：[描述]。目标：[优化目标]。请给出优先级排序的优化建议。"</p>
+      </div>
+      <div class="card2">
+        <strong style="font-size:11px;color:var(--indigo);">T06 — API设计评审</strong>
+        <p style="font-size:12px;color:var(--muted);margin-top:4px;font-style:italic;">"设计一套 [领域] REST API，支持 [功能列表]。需考虑：认证方式、版本控制、错误处理规范、速率限制。目标消费者：[前端/移动端/第三方]。"</p>
+      </div>
+      <div class="card2">
+        <strong style="font-size:11px;color:var(--cyan);">T07 — 数据库设计</strong>
+        <p style="font-size:12px;color:var(--muted);margin-top:4px;font-style:italic;">"为 [业务场景] 设计数据库 Schema。核心实体：[列举]。关键查询模式：[列举]。预估数据量：[规模]。使用 PostgreSQL，需考虑索引和分区策略。"</p>
+      </div>
+      <div class="card2">
+        <strong style="font-size:11px;color:var(--green);">T08 — 团队工作流设计</strong>
+        <p style="font-size:12px;color:var(--muted);margin-top:4px;font-style:italic;">"为 [规模] 人工程团队设计 AI 辅助开发工作流。现有痛点：[列举]。期望引入 AI 的环节：[列举]。工具约束：[可用工具]。"</p>
+      </div>
+      <div class="card2">
+        <strong style="font-size:11px;color:var(--amber);">T09 — 竞品分析框架</strong>
+        <p style="font-size:12px;color:var(--muted);margin-top:4px;font-style:italic;">"对 [产品类别] 市场做竞品分析。主要竞品：[A/B/C]。分析维度：[功能/定价/市场定位/技术实现/增长策略]。目的：找到差异化切入点。"</p>
+      </div>
+      <div class="card2">
+        <strong style="font-size:11px;color:var(--rose);">T10 — 上线前验收</strong>
+        <p style="font-size:12px;color:var(--muted);margin-top:4px;font-style:italic;">"[项目名] 准备上线。交付物清单：[列举]。文档状态：[描述]。已完成测试：[类型]。请执行五维验收，输出 PASS/CONDITIONAL_PASS/FAIL 决策。"</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- API 速查 -->
+  <div class="card">
+    <h4 style="color:#fff;margin-bottom:16px;">常用 API 接口速查</h4>
+    <table>
+      <thead>
+        <tr><th>接口</th><th>方法</th><th>描述</th><th>认证</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>/api/projects</code></td>
+          <td><span class="tag tag-green">GET</span></td>
+          <td style="color:var(--muted);">获取所有项目列表，支持分页</td>
+          <td><span class="tag tag-indigo">Bearer</span></td>
+        </tr>
+        <tr>
+          <td><code>/api/projects</code></td>
+          <td><span class="tag tag-cyan">POST</span></td>
+          <td style="color:var(--muted);">创建新项目，返回 project_id</td>
+          <td><span class="tag tag-indigo">Bearer</span></td>
+        </tr>
+        <tr>
+          <td><code>/api/projects/[id]</code></td>
+          <td><span class="tag tag-amber">PUT</span></td>
+          <td style="color:var(--muted);">更新项目信息</td>
+          <td><span class="tag tag-indigo">Bearer</span></td>
+        </tr>
+        <tr>
+          <td><code>/api/run</code></td>
+          <td><span class="tag tag-cyan">POST</span></td>
+          <td style="color:var(--muted);">启动 Skill 执行，返回 SSE 流</td>
+          <td><span class="tag tag-indigo">Bearer</span></td>
+        </tr>
+        <tr>
+          <td><code>/api/run/[id]</code></td>
+          <td><span class="tag tag-green">GET</span></td>
+          <td style="color:var(--muted);">获取执行结果（JSON 格式）</td>
+          <td><span class="tag tag-indigo">Bearer</span></td>
+        </tr>
+        <tr>
+          <td><code>/api/run/[id]/export</code></td>
+          <td><span class="tag tag-green">GET</span></td>
+          <td style="color:var(--muted);">导出报告，?format=json|markdown</td>
+          <td><span class="tag tag-indigo">Bearer</span></td>
+        </tr>
+      </tbody>
+    </table>
+    <pre style="margin-top:16px;font-size:12px;"><span class="cmt"># 示例：通过 API 触发执行</span>
+<span class="kw">curl</span> -X POST https://your-app.com/api/run   -H <span class="str">"Authorization: Bearer YOUR_TOKEN"</span>   -H <span class="str">"Content-Type: application/json"</span>   -d <span class="str">'{
+    "projectId": "proj_abc123",
+    "mode": "C",
+    "input": "我需要为电商平台规划推荐系统...",
+    "model": "claude-3-5-sonnet-20241022"
+  }'</span></pre>
+  </div>
+</section>
+
+<!-- Footer -->
+<div style="margin-top:80px;padding:32px 0;border-top:1px solid var(--border);text-align:center;">
+  <p style="color:var(--muted);font-size:13px;">
+    AI Skill 编排系统 v1.0.0 &nbsp;·&nbsp; 
+    <a href="https://github.com/letplaylimited-MARK/ai-skill-web-app" style="color:var(--indigo);text-decoration:none;">GitHub</a>
+    &nbsp;·&nbsp; Next.js 16 + TypeScript 5 + Prisma v7 + PostgreSQL + TailwindCSS 4
+  </p>
+  <p style="color:var(--border);font-size:11px;margin-top:6px;">Generated by AI Skill Delivery Report System · 2024</p>
+</div>
+
+</div><!-- end #main -->
+
+<script>
+// ===== SEARCH FUNCTIONALITY =====
+const searchIndex = [];
+
+function buildSearchIndex() {
+  const sections = document.querySelectorAll('.section');
+  sections.forEach(section => {
+    const id = section.id;
+    const badge = section.querySelector('.section-badge');
+    const title = section.querySelector('.section-title');
+    const sectionLabel = badge ? badge.textContent.trim() : '';
+    const sectionTitle = title ? title.textContent.trim() : '';
+    
+    // Index all text nodes
+    const walker = document.createTreeWalker(
+      section, NodeFilter.SHOW_TEXT, null, false
+    );
+    let node;
+    while (node = walker.nextNode()) {
+      const text = node.textContent.trim();
+      if (text.length > 10 && !text.includes('{') && text !== sectionTitle) {
+        searchIndex.push({
+          sectionId: id,
+          sectionLabel,
+          sectionTitle,
+          text: text.substring(0, 200)
+        });
+      }
+    }
+  });
+}
+
+function openSearch() {
+  document.getElementById('search-overlay').classList.add('open');
+  document.getElementById('search-input').focus();
+  document.getElementById('search-input').value = '';
+  document.getElementById('search-results').innerHTML = '<div style="padding:16px 20px;color:#94a3b8;font-size:13px;">输入关键词搜索...</div>';
+}
+
+function closeSearch() {
+  document.getElementById('search-overlay').classList.remove('open');
+  currentFocusIndex = -1;
+}
+
+function handleOverlayClick(e) {
+  if (e.target === document.getElementById('search-overlay')) closeSearch();
+}
+
+let currentFocusIndex = -1;
+let currentResults = [];
+
+function doSearch(query) {
+  const q = query.trim().toLowerCase();
+  const container = document.getElementById('search-results');
+  
+  if (!q) {
+    container.innerHTML = '<div style="padding:16px 20px;color:#94a3b8;font-size:13px;">输入关键词搜索...</div>';
+    currentResults = [];
+    return;
+  }
+  
+  const seen = new Set();
+  currentResults = searchIndex.filter(item => {
+    const match = item.text.toLowerCase().includes(q) || 
+                  item.sectionTitle.toLowerCase().includes(q);
+    if (!match) return false;
+    const key = item.sectionId + item.text.substring(0,50);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  }).slice(0, 12);
+  
+  if (currentResults.length === 0) {
+    container.innerHTML = '<div style="padding:16px 20px;color:#94a3b8;font-size:13px;">未找到相关内容</div>';
+    return;
+  }
+  
+  function highlight(text, q) {
+    const re = new RegExp('(' + q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + ')', 'gi');
+    return text.replace(re, '<mark>$1</mark>');
+  }
+  
+  container.innerHTML = currentResults.map((item, i) => {
+    const snippet = item.text.substring(0, 120);
+    return \`<div class="search-item" onclick="jumpToSection('\${item.sectionId}')" data-idx="\${i}">
+      <div class="s-section">\${item.sectionLabel}</div>
+      <div class="s-title">\${highlight(item.sectionTitle, q)}</div>
+      <div class="s-snippet">\${highlight(snippet, q)}</div>
+    </div>\`;
+  }).join('');
+  
+  currentFocusIndex = -1;
+}
+
+function searchKeydown(e) {
+  const items = document.querySelectorAll('.search-item');
+  if (e.key === 'Escape') { closeSearch(); return; }
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    currentFocusIndex = Math.min(currentFocusIndex + 1, items.length - 1);
+    updateFocus(items);
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    currentFocusIndex = Math.max(currentFocusIndex - 1, 0);
+    updateFocus(items);
+  } else if (e.key === 'Enter') {
+    if (currentFocusIndex >= 0 && currentResults[currentFocusIndex]) {
+      jumpToSection(currentResults[currentFocusIndex].sectionId);
+    }
+  }
+}
+
+function updateFocus(items) {
+  items.forEach((item, i) => {
+    item.classList.toggle('focused', i === currentFocusIndex);
+    if (i === currentFocusIndex) item.scrollIntoView({block:'nearest'});
+  });
+}
+
+function jumpToSection(id) {
+  closeSearch();
+  const el = document.getElementById(id);
+  if (el) { el.scrollIntoView({behavior:'smooth', block:'start'}); }
+}
+
+// Ctrl+K shortcut
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+    e.preventDefault();
+    openSearch();
+  }
+  if (e.key === 'Escape') closeSearch();
+});
+
+// ===== TAB SWITCHING =====
+function switchTab(group, tab, btn) {
+  // Hide all tab contents for this group
+  document.querySelectorAll('[id^="' + group + '-"]').forEach(el => {
+    el.classList.remove('active');
+  });
+  // Deactivate all tab buttons in same tabs container
+  btn.closest('.tabs').querySelectorAll('.tab-btn').forEach(b => {
+    b.classList.remove('active');
+  });
+  // Show selected
+  const target = document.getElementById(group + '-' + tab);
+  if (target) target.classList.add('active');
+  btn.classList.add('active');
+}
+
+// ===== NAVIGATION HIGHLIGHT (IntersectionObserver) =====
+const navLinks = document.querySelectorAll('.nav-link');
+const sections = document.querySelectorAll('.section');
+
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      navLinks.forEach(link => link.classList.remove('active'));
+      const activeLink = document.querySelector('.nav-link[href="#' + entry.target.id + '"]');
+      if (activeLink) {
+        activeLink.classList.add('active');
+        activeLink.scrollIntoView({block:'nearest', behavior:'smooth'});
+      }
+    }
+  });
+}, { threshold: 0.15, rootMargin: '-60px 0px -60% 0px' });
+
+sections.forEach(s => observer.observe(s));
+
+// ===== MOBILE SIDEBAR =====
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+}
+
+// Close sidebar when nav link clicked on mobile
+navLinks.forEach(link => {
+  link.addEventListener('click', () => {
+    if (window.innerWidth <= 768) {
+      document.getElementById('sidebar').classList.remove('open');
+    }
+  });
+});
+
+// ===== INIT =====
+document.addEventListener('DOMContentLoaded', () => {
+  buildSearchIndex();
+});
+// Also build after load (fallback)
+window.addEventListener('load', () => {
+  if (searchIndex.length === 0) buildSearchIndex();
+});
+</script>
+</body>
+</html>
