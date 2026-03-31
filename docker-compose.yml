@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  # PostgreSQL 数据库
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-ai_skill}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ai_skill_password}
+      POSTGRES_DB: ${POSTGRES_DB:-ai_skill_web}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ai_skill}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # 数据库迁移（在 app 启动前执行）
+  migrate:
+    image: node:22-alpine
+    working_dir: /app
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-ai_skill}:${POSTGRES_PASSWORD:-ai_skill_password}@db:5432/${POSTGRES_DB:-ai_skill_web}
+    volumes:
+      - ./prisma:/app/prisma
+      - ./node_modules:/app/node_modules
+      - ./package.json:/app/package.json
+    command: >
+      sh -c "
+        npm install -g pnpm@9 &&
+        pnpm exec prisma db push --accept-data-loss
+      "
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # AI Skill Web App
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-3000}:3000"
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-ai_skill}:${POSTGRES_PASSWORD:-ai_skill_password}@db:5432/${POSTGRES_DB:-ai_skill_web}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      NODE_ENV: production
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-change-me-in-production}
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  default:
+    name: ai-skill-network

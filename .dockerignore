@@ -1,0 +1,49 @@
+# Docker 忽略文件 — 排除不需要进入镜像的文件
+
+# 依赖和构建产物
+node_modules
+.next
+.turbo
+
+# 开发配置
+.env
+.env.local
+.env.development
+.env.test
+
+# Git
+.git
+.gitignore
+
+# 文档
+*.md
+!README.md
+
+# 测试
+__tests__
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
+
+# CI/CD
+.github
+
+# 编辑器
+.vscode
+.idea
+*.swp
+*.swo
+
+# 操作系统
+.DS_Store
+Thumbs.db
+
+# 日志
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# 临时文件
+*.tmp
+*.temp
