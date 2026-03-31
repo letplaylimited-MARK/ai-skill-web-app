@@ -1,0 +1,105 @@
+name: Release — Auto Release on Tag
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+env:
+  NODE_VERSION: '22'
+
+jobs:
+  create-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Extract version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma Client
+        run: pnpm exec prisma generate
+
+      - name: Build for release
+        run: pnpm build
+        env:
+          DATABASE_URL: 'postgresql://postgres:password@localhost:5432/ai_skill_web'
+          ANTHROPIC_API_KEY: 'placeholder-for-build'
+          OPENAI_API_KEY: 'placeholder-for-build'
+
+      - name: Generate changelog from commits
+        id: changelog
+        run: |
+          # 获取上一个 tag
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          
+          if [ -z "$PREV_TAG" ]; then
+            COMMITS=$(git log --pretty=format:"- %s" | head -20)
+          else
+            COMMITS=$(git log ${PREV_TAG}..HEAD --pretty=format:"- %s")
+          fi
+          
+          echo "CHANGELOG<<EOF" >> $GITHUB_OUTPUT
+          echo "$COMMITS" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.version.outputs.VERSION }}
+          release_name: "AI Skill Web App ${{ steps.version.outputs.VERSION }}"
+          body: |
+            ## AI Skill 编排系统 ${{ steps.version.outputs.VERSION }}
+            
+            ### 变更内容
+            ${{ steps.changelog.outputs.CHANGELOG }}
+            
+            ### 快速部署
+            ```bash
+            # 克隆仓库
+            git clone https://github.com/letplaylimited-MARK/ai-skill-web-app.git
+            cd ai-skill-web-app
+            git checkout ${{ steps.version.outputs.VERSION }}
+            
+            # 配置环境
+            cp .env.example .env
+            # 编辑 .env 填入 API Key 和数据库连接
+            
+            # 安装依赖并启动
+            pnpm install
+            pnpm exec prisma db push
+            pnpm dev
+            ```
+            
+            ### 技术栈
+            - Next.js 16 + React 19
+            - Prisma 7 + PostgreSQL
+            - Tailwind CSS 4
+            - 支持 Claude (Anthropic) + GPT (OpenAI)
+            
+            ---
+            *由 AI Skill 体系自动生成 · System v1.5.1*
+          draft: false
+          prerelease: ${{ contains(steps.version.outputs.VERSION, '-') }}
