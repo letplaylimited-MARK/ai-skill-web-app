@@ -1,0 +1,54 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Project {
+  id          String      @id @default(cuid())
+  title       String
+  description String?
+  mode        String      @default("C") // A|B|C|D|E
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  executions  Execution[]
+}
+
+model Execution {
+  id             String          @id @default(cuid())
+  projectId      String?
+  project        Project?        @relation(fields: [projectId], references: [id])
+  userInput      String
+  mode           String          @default("C")
+  state          String          @default("pending") // pending|in_progress|completed|failed
+  currentSkill   String?
+  councilPassed  Boolean         @default(false)
+  apiProvider    String          @default("claude") // claude|openai
+  modelName      String?
+  steps          ExecutionStep[]
+  councilReport  Json?
+  finalReport    String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+}
+
+model ExecutionStep {
+  id           String     @id @default(cuid())
+  executionId  String
+  execution    Execution  @relation(fields: [executionId], references: [id], onDelete: Cascade)
+  stepNumber   Int
+  skillCode    String     // skill-00 ~ skill-05
+  status       String     @default("pending") // pending|running|success|error
+  inputHandoff Json
+  outputHandoff Json?
+  rawAiResponse String?
+  errorMessage String?
+  durationMs   Int?
+  createdAt    DateTime   @default(now())
+  completedAt  DateTime?
+}
