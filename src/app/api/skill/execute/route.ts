@@ -3,15 +3,43 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { executeSkillViaLlm, resolveApiKey, needsUserApproval } from '@/lib/llm-gateway';
 import type { SkillCode } from '@/lib/schema/types';
+import { rateLimit, getClientIp } from '@/lib/rate-limit';
+import { validateExecutionId, validateSkillCode, sanitizeString, sanitizeForLog } from '@/lib/validate';
 
 export async function POST(req: NextRequest) {
+  // SEC-001: 速率限制 — 每 IP 每分钟最多 30 次执行请求（AI 调用成本高）
+  const clientIp = getClientIp(req);
+  const rl = rateLimit(clientIp, { max: 30, windowMs: 60_000, prefix: 'execute' });
+  if (!rl.success) {
+    return NextResponse.json(
+      { error: '请求过于频繁，请稍后再试', retryAfter: Math.ceil((rl.resetAt - Date.now()) / 1000) },
+      {
+        status: 429,
+        headers: {
+          'Retry-After': String(Math.ceil((rl.resetAt - Date.now()) / 1000)),
+          'X-RateLimit-Limit': String(rl.limit),
+          'X-RateLimit-Remaining': '0',
+          'X-RateLimit-Reset': String(rl.resetAt),
+        },
+      }
+    );
+  }
+
   try {
     const { searchParams } = new URL(req.url);
-    const executionId = searchParams.get('execution_id');
-    const skillCode = searchParams.get('skill_code') as SkillCode;
+
+    // SEC-002: 输入校验 — execution_id 必须是合法 UUID v4，skill_code 必须是 s00–s99
+    const rawExecutionId = searchParams.get('execution_id');
+    const rawSkillCode = searchParams.get('skill_code');
+
+    const executionId = validateExecutionId(rawExecutionId);
+    const skillCode = validateSkillCode(rawSkillCode) as SkillCode | null;
 
     if (!executionId || !skillCode) {
-      return NextResponse.json({ error: 'execution_id 和 skill_code 参数必填' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'execution_id（UUID v4）和 skill_code（s00-s99）参数必填且格式正确' },
+        { status: 400 }
+      );
     }
 
     // 解析请求体（用户可能传递编辑后的 handoff）
@@ -22,6 +50,9 @@ export async function POST(req: NextRequest) {
     } catch { /* 空 body 允许 */ }
 
     const { user_edited_handoff, api_key_override } = body;
+
+    // SEC-002: 净化 API key override（防止日志注入）
+    const safeApiKeyOverride = api_key_override ? sanitizeString(api_key_override, 200) : undefined;
 
     // 获取执行记录（含所有步骤）
     const execution = await prisma.execution.findUnique({
@@ -43,7 +74,7 @@ export async function POST(req: NextRequest) {
       ? { ...baseHandoff, ...user_edited_handoff }
       : baseHandoff;
 
-    const apiKey = resolveApiKey(execution.apiProvider as 'claude' | 'openai', api_key_override);
+    const apiKey = resolveApiKey(execution.apiProvider as 'claude' | 'openai', safeApiKeyOverride);
     const stepNumber = execution.steps.length;
 
     // 创建步骤记录（运行中）
@@ -132,7 +163,7 @@ export async function POST(req: NextRequest) {
     });
 
   } catch (err) {
-    console.error('[/api/skill/execute]', err);
+    console.error('[/api/skill/execute]', sanitizeForLog(err instanceof Error ? err.message : String(err)));
     return NextResponse.json(
       { error: err instanceof Error ? err.message : '服务器内部错误' },
       { status: 500 }

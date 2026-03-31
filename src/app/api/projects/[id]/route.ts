@@ -1,10 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { rateLimit, getClientIp } from '@/lib/rate-limit';
+import { sanitizeString } from '@/lib/validate';
 
 type RouteContext = { params: Promise<{ id: string }> };
 
 // GET /api/projects/[id] — 获取单个项目及所有执行记录
-export async function GET(_request: NextRequest, context: RouteContext) {
+export async function GET(request: NextRequest, context: RouteContext) {
+  // SEC-001: 速率限制
+  const clientIp = getClientIp(request);
+  const rl = rateLimit(clientIp, { max: 60, windowMs: 60_000, prefix: 'proj-id-get' });
+  if (!rl.success) {
+    return NextResponse.json({ error: '请求过于频繁' }, { status: 429 });
+  }
+
   try {
     const { id } = await context.params;
 
@@ -48,10 +57,17 @@ export async function GET(_request: NextRequest, context: RouteContext) {
 
 // PATCH /api/projects/[id] — 更新项目信息
 export async function PATCH(request: NextRequest, context: RouteContext) {
+  // SEC-001: 速率限制
+  const clientIp = getClientIp(request);
+  const rl = rateLimit(clientIp, { max: 20, windowMs: 60_000, prefix: 'proj-id-patch' });
+  if (!rl.success) {
+    return NextResponse.json({ error: '请求过于频繁' }, { status: 429 });
+  }
+
   try {
     const { id } = await context.params;
     const body = await request.json();
-    const { title, description, mode } = body;
+    const { title: rawTitle, description: rawDesc, mode } = body;
 
     const existing = await prisma.project.findUnique({ where: { id } });
     if (!existing) {
@@ -60,11 +76,13 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 
     const validModes = ['A', 'B', 'C', 'D', 'E'];
     const updateData: Record<string, unknown> = {};
-    if (title && typeof title === 'string' && title.trim()) {
-      updateData.title = title.trim();
+    // SEC-002: 对所有可写字段做安全消毒
+    if (rawTitle && typeof rawTitle === 'string') {
+      const title = sanitizeString(rawTitle, 100);
+      if (title) updateData.title = title;
     }
-    if (description !== undefined) {
-      updateData.description = description?.trim() || null;
+    if (rawDesc !== undefined) {
+      updateData.description = rawDesc ? sanitizeString(rawDesc, 500) || null : null;
     }
     if (mode && validModes.includes(mode)) {
       updateData.mode = mode;

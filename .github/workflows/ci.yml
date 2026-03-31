@@ -57,7 +57,6 @@ jobs:
 
       - name: Run ESLint
         run: pnpm lint
-        # 移除 || true，确保 lint 错误真正阻断 CI
 
   validate-skill-prompts:
     name: Validate Skill Prompts
@@ -135,6 +134,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # gitleaks 需要完整历史
+
+      # SEC-004: Secrets 扫描 —— 发现泄露立即失败
+      - name: Gitleaks secrets scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -149,17 +156,62 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Run security audit
-        run: pnpm audit --audit-level=high || echo "Security audit completed with warnings"
+      # SEC-005: 依赖漏洞扫描 —— CRITICAL 级别阻断，不再静默忽略
+      - name: Run security audit (CRITICAL blocks CI)
+        run: pnpm audit --audit-level=critical
 
+      # SEC-005b: 补充 high 级别警告（不阻断，生成报告）
+      - name: Run security audit (high level warning)
+        run: pnpm audit --audit-level=high || echo "⚠️ High-severity vulnerabilities found — review required"
+
+      # SEC-006: 硬编码密钥检测
       - name: Check for hardcoded secrets
         run: |
-          # 检查是否有硬编码的 API Key 模式
           if grep -rn "sk-[a-zA-Z0-9]\{32,\}" src/ --include="*.ts" --include="*.tsx"; then
             echo "ERROR: Potential hardcoded OpenAI API key detected!"
             exit 1
           fi
-          if grep -rn "anthropic\|claude" src/ --include="*.ts" --include="*.tsx" | grep -v "import\|comment\|// " | grep -i "api.*key.*=.*['\"].*['\"]"; then
-            echo "WARNING: Potential hardcoded Anthropic API key detected"
+          if grep -rn "sk-ant-[a-zA-Z0-9]" src/ --include="*.ts" --include="*.tsx"; then
+            echo "ERROR: Potential hardcoded Anthropic API key detected!"
+            exit 1
           fi
           echo "✅ No obvious hardcoded secrets found"
+
+  container-scan:
+    name: Container Image Security Scan
+    runs-on: ubuntu-latest
+    needs: [build]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # SEC-007: Trivy 容器镜像扫描 —— CRITICAL/HIGH 漏洞阻断
+      - name: Build Docker image for scanning
+        run: docker build -t ai-skill-web-app:ci .
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'ai-skill-web-app:ci'
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Run Trivy SARIF report (for GitHub Security tab)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'ai-skill-web-app:ci'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+        if: always()
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-results.sarif'
+        if: always()

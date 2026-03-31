@@ -5,6 +5,8 @@ import { resolveApiKey } from '@/lib/llm-gateway';
 import Anthropic from '@anthropic-ai/sdk';
 import OpenAI from 'openai';
 import type { CouncilPackage } from '@/lib/schema/types';
+import { rateLimit, getClientIp } from '@/lib/rate-limit';
+import { validateExecutionId, sanitizeString, validateLength, sanitizeForLog } from '@/lib/validate';
 
 const COUNCIL_SYSTEM_PROMPT = `你是「AI Skill 技能圆桌」的主持人协调官。
 
@@ -58,17 +60,42 @@ const COUNCIL_SYSTEM_PROMPT = `你是「AI Skill 技能圆桌」的主持人协�
 }`;
 
 export async function POST(req: NextRequest) {
+  // SEC-001: 速率限制 — 每 IP 每分钟最多 20 次圆桌请求（AI 成本更高）
+  const clientIp = getClientIp(req);
+  const rl = rateLimit(clientIp, { max: 20, windowMs: 60_000, prefix: 'council' });
+  if (!rl.success) {
+    return NextResponse.json(
+      { error: '请求过于频繁，请稍后再试', retryAfter: Math.ceil((rl.resetAt - Date.now()) / 1000) },
+      {
+        status: 429,
+        headers: {
+          'Retry-After': String(Math.ceil((rl.resetAt - Date.now()) / 1000)),
+          'X-RateLimit-Limit': String(rl.limit),
+          'X-RateLimit-Remaining': '0',
+          'X-RateLimit-Reset': String(rl.resetAt),
+        },
+      }
+    );
+  }
+
   try {
     const { searchParams } = new URL(req.url);
     const body = await req.json();
     const { user_input: bodyUserInput, topic, api_key_override, execution_id: bodyExecId } = body;
     
     // execution_id 兼容 query param 和 body
-    const executionId = searchParams.get('execution_id') || bodyExecId;
-    const user_input = bodyUserInput || topic; // 兼容两种字段名
+    const rawExecId = searchParams.get('execution_id') || bodyExecId;
+    const executionId = validateExecutionId(rawExecId);
+    
+    // SEC-002: 净化并校验 user_input 长度（1–2000字符）
+    const rawUserInput = bodyUserInput || topic;
+    const user_input = validateLength(sanitizeString(rawUserInput, 2000), 1, 2000);
 
     if (!executionId || !user_input) {
-      return NextResponse.json({ error: 'execution_id 和 user_input/topic 必填' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'execution_id（UUID v4）和 user_input/topic（1-2000字符）必填' },
+        { status: 400 }
+      );
     }
 
     const execution = await prisma.execution.findUnique({ where: { id: executionId } });
@@ -76,7 +103,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Execution not found' }, { status: 404 });
     }
 
-    const apiKey = resolveApiKey(execution.apiProvider as 'claude' | 'openai', api_key_override);
+    const apiKey = resolveApiKey(execution.apiProvider as 'claude' | 'openai', sanitizeString(api_key_override, 200) || undefined);
     const userMessage = `用户需求：${user_input}\n\n请进行六角色圆桌预检，输出 JSON 报告。`;
 
     let rawResponse: string;
@@ -145,7 +172,7 @@ export async function POST(req: NextRequest) {
     });
 
   } catch (err) {
-    console.error('[/api/council/run]', err);
+    console.error('[/api/council/run]', sanitizeForLog(err instanceof Error ? err.message : String(err)));
     return NextResponse.json(
       { error: err instanceof Error ? err.message : '圆桌预检失败' },
       { status: 500 }

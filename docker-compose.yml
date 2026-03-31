@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  # PostgreSQL 数据库
+  # PostgreSQL 数据库（仅内部网络可达，不对外暴露端口）
   db:
     image: postgres:16-alpine
     restart: unless-stopped
@@ -11,13 +11,17 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-ai_skill_web}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
+    # SEC-008: 移除对外暴露的 5432 端口，仅限内部网络访问
+    # ports:  # 已移除，DB 不对宿主机暴露
+    networks:
+      - backend
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ai_skill}"]
       interval: 10s
       timeout: 5s
       retries: 5
+    security_opt:
+      - no-new-privileges:true
 
   # 数据库迁移（在 app 启动前执行）
   migrate:
@@ -26,9 +30,9 @@ services:
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-ai_skill}:${POSTGRES_PASSWORD:-ai_skill_password}@db:5432/${POSTGRES_DB:-ai_skill_web}
     volumes:
-      - ./prisma:/app/prisma
-      - ./node_modules:/app/node_modules
-      - ./package.json:/app/package.json
+      - ./prisma:/app/prisma:ro
+      - ./node_modules:/app/node_modules:ro
+      - ./package.json:/app/package.json:ro
     command: >
       sh -c "
         npm install -g pnpm@9 &&
@@ -37,6 +41,10 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    networks:
+      - backend
+    security_opt:
+      - no-new-privileges:true
 
   # AI Skill Web App
   app:
@@ -51,22 +59,40 @@ services:
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
       OPENAI_API_KEY: ${OPENAI_API_KEY}
       NODE_ENV: production
-      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-change-me-in-production}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
       NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
     depends_on:
       migrate:
         condition: service_completed_successfully
+    networks:
+      - frontend
+      - backend
     healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/ || exit 1"]
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
+    # SEC-009: 容器安全加固
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /app/.next/cache
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
 
 volumes:
   postgres_data:
     driver: local
 
+# SEC-010: 网络隔离 —— frontend 供外部访问，backend 仅服务间通信
 networks:
-  default:
-    name: ai-skill-network
+  frontend:
+    name: ai-skill-frontend
+    driver: bridge
+  backend:
+    name: ai-skill-backend
+    driver: bridge
+    internal: true  # 纯内部网络，无法访问外部互联网
